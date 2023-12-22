@@ -19,6 +19,8 @@ class LEDs(commands2.SubsystemBase):
     flash_state = True
     dominant_color = [255, 0, 0]
     flash_rate = 2
+    shooting = False
+    shooting_counter = 0
 
     def __init__(self, port: int, length: int, num: int, animation_speed: float, style: str) -> None:
         super().__init__()
@@ -83,6 +85,11 @@ class LEDs(commands2.SubsystemBase):
             self.purple_pattern = [AddressableLED.LEDData(50, 149, 168)] * 10
         for i in range(0, self.length - 10):
             self.purple_pattern.append(AddressableLED.LEDData(0, 0, 0))
+
+        # Setup shoot animation default
+        self.shoot_pattern = [AddressableLED.LEDData(239, 187, 240)] * 10
+        for i in range(0, self.length - 10):
+            self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
         self.heat = [255] * self.length
 
@@ -232,3 +239,25 @@ class LEDs(commands2.SubsystemBase):
             self.m_ledBuffer = temp_buffer
         self.set_chain()
         self.current_state = "fire"
+
+    def shoot_animator(self, speed: str):
+        self.shooting = True
+        if speed == "fast":
+            index = 4
+        elif speed == "fastest":
+            index = 6
+        else:
+            index = 2
+        if self.timer.get() - 0.02 > self.record_time:
+            self.shooting_counter += index
+            self.m_ledBuffer = self.shoot_pattern
+            self.shoot_pattern = self.shoot_pattern[index:] + self.shoot_pattern[:index]
+            self.record_time = self.timer.get()
+        self.set_chain()
+        self.current_state = "shooting"
+        if self.shooting_counter >= self.length:
+            self.shooting_counter = 0
+            self.shooting = False
+            self.shoot_pattern = [AddressableLED.LEDData(239, 187, 240)] * 10
+            for i in range(0, self.length - 10):
+                self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))

@@ -1,15 +1,15 @@
 from rev import CANSparkMax
-from ctre.sensors import CANCoder, Pigeon2
+from phoenix5.sensors import CANCoder, Pigeon2
 import commands2
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModulePosition
 from wpimath.estimator import SwerveDrive4PoseEstimator
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
-from wpimath.controller import PIDController, ProfiledPIDControllerRadians
-from wpimath.trajectory import TrajectoryGenerator, TrajectoryConfig
+from wpimath.controller import PIDController
 from subsystems.swervemodule import SwerveModule
 from constants import DriveConstants, ModuleConstants, AutoConstants
-from wpilib import SmartDashboard, Field2d
-import math
+from wpilib import SmartDashboard, Field2d, Timer
+from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.config import HolonomicPathFollowerConfig, ReplanningConfig, PIDConstants
 
 
 class DriveSubsystem(commands2.SubsystemBase):
@@ -26,7 +26,6 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         # Reset odometry @ instantiation.
         self.gyro.setYaw(0)
-        self.reset_encoders()
 
         # Setup snap controller for class-wide use.
         self.snap_controller = PIDController(DriveConstants.snap_controller_PID[0],
@@ -43,43 +42,105 @@ class DriveSubsystem(commands2.SubsystemBase):
         self.balanced = True
         self.debug_mode = False
 
-    # Instantiate all swerve modules.
-    m_FL = SwerveModule(CANSparkMax(ModuleConstants.fl_drive_id, CANSparkMax.MotorType.kBrushless),
-                        CANSparkMax(ModuleConstants.fl_turn_id, CANSparkMax.MotorType.kBrushless),
-                        CANCoder(ModuleConstants.fl_encoder_id),
-                        ModuleConstants.fl_zero_offset,
-                        True,
-                        True)
-    m_FR = SwerveModule(CANSparkMax(ModuleConstants.fr_drive_id, CANSparkMax.MotorType.kBrushless),
-                        CANSparkMax(ModuleConstants.fr_turn_id, CANSparkMax.MotorType.kBrushless),
-                        CANCoder(ModuleConstants.fr_encoder_id),
-                        ModuleConstants.fr_zero_offset,
-                        True,
-                        True)
-    m_BL = SwerveModule(CANSparkMax(ModuleConstants.bl_drive_id, CANSparkMax.MotorType.kBrushless),
-                        CANSparkMax(ModuleConstants.bl_turn_id, CANSparkMax.MotorType.kBrushless),
-                        CANCoder(ModuleConstants.bl_encoder_id),
-                        ModuleConstants.bl_zero_offset,
-                        True,
-                        True)
-    m_BR = SwerveModule(CANSparkMax(ModuleConstants.br_drive_id, CANSparkMax.MotorType.kBrushless),
-                        CANSparkMax(ModuleConstants.br_turn_id, CANSparkMax.MotorType.kBrushless),
-                        CANCoder(ModuleConstants.br_encoder_id),
-                        ModuleConstants.br_zero_offset,
-                        True,
-                        True)
+        # Instantiate all swerve modules.
+        self.m_FL = SwerveModule(CANSparkMax(ModuleConstants.fl_drive_id, CANSparkMax.MotorType.kBrushless),
+                                 CANSparkMax(ModuleConstants.fl_turn_id, CANSparkMax.MotorType.kBrushless),
+                                 CANCoder(ModuleConstants.fl_encoder_id),
+                                 ModuleConstants.fl_zero_offset,
+                                 True,
+                                 True)
+        self.m_FR = SwerveModule(CANSparkMax(ModuleConstants.fr_drive_id, CANSparkMax.MotorType.kBrushless),
+                                 CANSparkMax(ModuleConstants.fr_turn_id, CANSparkMax.MotorType.kBrushless),
+                                 CANCoder(ModuleConstants.fr_encoder_id),
+                                 ModuleConstants.fr_zero_offset,
+                                 True,
+                                 True)
+        self.m_BL = SwerveModule(CANSparkMax(ModuleConstants.bl_drive_id, CANSparkMax.MotorType.kBrushless),
+                                 CANSparkMax(ModuleConstants.bl_turn_id, CANSparkMax.MotorType.kBrushless),
+                                 CANCoder(ModuleConstants.bl_encoder_id),
+                                 ModuleConstants.bl_zero_offset,
+                                 True,
+                                 True)
+        self.m_BR = SwerveModule(CANSparkMax(ModuleConstants.br_drive_id, CANSparkMax.MotorType.kBrushless),
+                                 CANSparkMax(ModuleConstants.br_turn_id, CANSparkMax.MotorType.kBrushless),
+                                 CANCoder(ModuleConstants.br_encoder_id),
+                                 ModuleConstants.br_zero_offset,
+                                 True,
+                                 True)
 
-    # Set initial value of software-tracked position.
-    m_FL_position = m_FL.get_position()
-    m_FR_position = m_FR.get_position()
-    m_BL_position = m_BL.get_position()
-    m_BR_position = m_BR.get_position()
+        # Set initial value of software-tracked position.
+        self.m_FL_position = self.m_FL.get_position()
+        self.m_FR_position = self.m_FR.get_position()
+        self.m_BL_position = self.m_BL.get_position()
+        self.m_BR_position = self.m_BR.get_position()
+
+        self.reset_encoders()
+
+        # TODO Check functionality. Concerned about commanded speed in simulator.
+        AutoBuilder.configureHolonomic(
+            self.get_pose,
+            self.reset_odometry,
+            self.get_chassis_speeds,
+            self.drive_by_chassis_speeds,
+            HolonomicPathFollowerConfig(
+                PIDConstants(AutoConstants.kPXController, 0, 0),
+                PIDConstants(AutoConstants.kPThetaController, 0, 0),
+                AutoConstants.max_module_speed,
+                AutoConstants.module_radius_from_center,
+                ReplanningConfig()
+            ),
+            self
+        )
 
     # Instantiate gyro.
     gyro = Pigeon2(9)
 
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
+
+    # Start timer for 2nd order kinematics.
+    # TODO Disable this if 2ok is not being used.
+    timer = Timer()
+    timer.start()
+    last_time = 0
+    current_time = timer.get()
+
+    def get_chassis_speeds(self):
+        """Used for 2024 PathPlanner."""
+        return DriveConstants.m_kinematics.toChassisSpeeds((self.m_FL.get_state(),
+                                                           self.m_FR.get_state(),
+                                                           self.m_BL.get_state(),
+                                                           self.m_BR.get_state()))
+
+    def drive_by_chassis_speeds(self, chassis_speeds: ChassisSpeeds):
+        """Used for 2024 PathPlanner."""
+        swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(chassis_speeds)
+
+        # Set all swerve module state targets and update the dashboard with the targets.
+        self.m_FL.set_desired_state(swerve_module_states[0])
+        self.m_FR.set_desired_state(swerve_module_states[1])
+        self.m_BL.set_desired_state(swerve_module_states[2])
+        self.m_BR.set_desired_state(swerve_module_states[3])
+
+    def drive_2ok(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
+        """Drive the robot with second order kinematics enabled."""
+        self.current_time = self.timer.get()
+        if not field_relative:
+            swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
+                ChassisSpeeds.discretize(-x_speed, -y_speed, -rot, self.current_time - self.last_time)
+            )
+        else:
+            swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
+                ChassisSpeeds.discretize(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed,
+                                                          -y_speed,
+                                                          -rot,
+                                                          Rotation2d.fromDegrees(-self.get_heading())),
+                    self.current_time - self.last_time
+                )
+            )
+            self.set_module_states(swerve_module_states)
+            self.last_time = self.timer.get()
 
     def drive(self, x_speed, y_speed, rot, field_relative) -> None:
         """The default drive command for the robot. This is the math that makes swerve drive work."""
@@ -102,14 +163,8 @@ class DriveSubsystem(commands2.SubsystemBase):
         self.m_BL.set_desired_state(swerve_module_states[2])
         self.m_BR.set_desired_state(swerve_module_states[3])
 
-        SmartDashboard.putNumberArray("Swerve Target States",
-                                      [swerve_module_states[0].angle.degrees(), swerve_module_states[0].speed,
-                                       swerve_module_states[1].angle.degrees(), swerve_module_states[1].speed,
-                                       swerve_module_states[2].angle.degrees(), swerve_module_states[2].speed,
-                                       swerve_module_states[3].angle.degrees(), swerve_module_states[3].speed])
-
         # if self.debug_mode is True:
-        if True:
+        if self.debug_mode:
             SmartDashboard.putNumber("FL Target", swerve_module_states[0].angle.degrees())
             SmartDashboard.putNumber("FL Target Speed", swerve_module_states[0].speed)
             SmartDashboard.putNumber("FR Target", swerve_module_states[1].angle.degrees())
@@ -153,11 +208,6 @@ class DriveSubsystem(commands2.SubsystemBase):
         SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
         SmartDashboard.putBoolean("Balanced?", self.balanced)
         SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
-        SmartDashboard.putNumberArray("Swerve Actual States",
-                                      [self.m_FL.get_state().angle.degrees(), self.m_FL.get_state().speed,
-                                       self.m_FR.get_state().angle.degrees(), self.m_FR.get_state().speed,
-                                       self.m_BL.get_state().angle.degrees(), self.m_BL.get_state().speed,
-                                       self.m_BR.get_state().angle.degrees(), self.m_BR.get_state().speed])
 
         if self.debug_mode is True:
             SmartDashboard.putNumber("FL Angle", self.m_FL.get_state().angle.degrees())
@@ -172,7 +222,6 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def get_pose(self):
         """Return pose estimator's estimated position."""
-        # TODO CHECK IF THIS FIXES LOGGING/TRAJECTORY ISSUES
         return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
                       self.m_odometry.getEstimatedPosition().rotation())
 
@@ -196,8 +245,7 @@ class DriveSubsystem(commands2.SubsystemBase):
                                       pose)
 
     def set_module_states(self, desired_states):
-        """Set swerve module states given a list of target states."""
-        # TODO This may be duplicate code. Investigate.
+        """Set swerve module states given a list of target states. Used to simplify drive_2ok."""
         SwerveDrive4Kinematics.desaturateWheelSpeeds(desired_states, DriveConstants.kMaxSpeed)
         self.m_FL.set_desired_state(desired_states[0])
         self.m_FR.set_desired_state(desired_states[1])
@@ -246,21 +294,3 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def debug_toggle(self, on: bool):
         self.debug_mode = on
-
-    def follow_trajectory_teleop(self, target: Pose2d):
-        theta_controller = ProfiledPIDControllerRadians(AutoConstants.kPThetaController, 0, 0,
-                                                        AutoConstants.kThetaControllerConstraints, 0.02)
-        theta_controller.enableContinuousInput(-math.pi, math.pi)
-        traj = TrajectoryGenerator.generateTrajectory(self.get_pose(), [], target,
-                                                      TrajectoryConfig(AutoConstants.kMaxSpeedMetersPerSecond,
-                                                                       AutoConstants.kMaxAccelerationMetersPerSecondSquared))
-        scc = commands2.Swerve4ControllerCommand(traj,
-                                                 self.get_pose,
-                                                 DriveConstants.m_kinematics,
-                                                 PIDController(AutoConstants.kPXController, 0, 0),
-                                                 PIDController(AutoConstants.kPYController, 0, 0),
-                                                 theta_controller,
-                                                 self.set_module_states,
-                                                 self)
-
-        return scc

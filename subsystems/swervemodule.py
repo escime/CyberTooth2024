@@ -3,9 +3,10 @@ from wpimath.geometry import Rotation2d
 from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
 from wpimath.filter import SlewRateLimiter
 from rev import CANSparkMax
-from ctre.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame
+from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame
 from constants import DriveConstants
 import math
+import time
 
 
 class SwerveModule:
@@ -59,13 +60,18 @@ class SwerveModule:
         # Set additional constraints on each SPARK MAX controller, including open & closed loop ramp rates, current
         # limits, and idle mode. Then burn to flash memory on each controller.
         rm.setClosedLoopRampRate(DriveConstants.closed_loop_ramp)
+        # time.sleep(0.2)
         rm.setOpenLoopRampRate(DriveConstants.open_loop_ramp)
         dm.setClosedLoopRampRate(DriveConstants.closed_loop_ramp)
+        # time.sleep(0.2)
         dm.setOpenLoopRampRate(DriveConstants.open_loop_ramp)
         rm.setSmartCurrentLimit(DriveConstants.azimuth_current_limit)
+        # time.sleep(0.2)
         dm.setSmartCurrentLimit(DriveConstants.drive_current_limit)
+        # time.sleep(0.2)
         rm.setIdleMode(CANSparkMax.IdleMode.kBrake)
         dm.setIdleMode(CANSparkMax.IdleMode.kBrake)
+        # time.sleep(0.2)
         rm.burnFlash()
         dm.burnFlash()
 

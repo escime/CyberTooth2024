@@ -7,26 +7,18 @@ import math
 from wpimath.geometry import Translation2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
-import wpimath.units
 
 
 class DriveConstants:
-    wheel_diameter = wpimath.units.inchesToMeters(4)
+    wheel_diameter = 0.1016  # meters
     wheel_circumference = wheel_diameter * math.pi
     drive_gear_ratio = 6.75
     angle_gear_ratio = 21.43
 
-    kEncoderResolution = 4096
-    kWheelDiameterInches = 4
-    kWheelRadius = 4*0.0254*0.5
-    kModuleMaxAngularVelocity = 3  # ????
-    kModuleMaxAngularAcceleration = 2 * math.pi
-    t_velocity_conversion_factor = 0.00488
-    # 1/21.42857142857143
-    t_position_conversion_factor = 0.2932  # L2 ratio is 21.42857142857143
-    d_velocity_conversion_factor = 0.0007885761
-    # (1/6.746031745) * 0.319185544
-    d_position_conversion_factor = 0.047314566  # L2 ratio is 6.746031745
+    # d_velocity_conversion_factor = 0.0007885761
+    # d_position_conversion_factor = 0.047314566  # L2 ratio is 6.746031745
+    d_position_conversion_factor = wheel_circumference / drive_gear_ratio
+    d_velocity_conversion_factor = d_position_conversion_factor / 60  # Conversion from rot/min to m/s
     kMaxSpeed = 10  # Set max speed in m/s 10
     kMaxAngularSpeed = 20  # Set max rotation speed rot/s 20
     kGyroReversed = False
@@ -40,16 +32,12 @@ class DriveConstants:
     snap_controller_PID = [0.17, 0, 0]
     drive_controller_PID = [1.5, 0, 0]
     azimuth_controller_PID = [2, 0, 0]
-    drive_controller_FF = [0.22/12, 1.0/12, 0.23/12]
-
-    # Here are the sysID constants :) They felt less snappy to me so they just live here now
-    # drive_controller_PID = [0.32069, 0, 0]
-    # drive_controller_FF = [0.10338, 2.6387, 0.17711]
+    drive_controller_FF = [0.22 / 12, 1.0 / 12, 0.23 / 12]
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
-    drive_current_limit = 38
-    azimuth_current_limit = 38
+    drive_current_limit = 36  # Was 38
+    azimuth_current_limit = 36  # Was 38
 
     balance_PID = [0.01, 0, 0]
 
@@ -61,13 +49,13 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = 4.0
     kMaxAccelerationMetersPerSecondSquared = 3.0
 
-    # kPXController = 12
-    # kPYController = 10
     kPXController = 12
     kPYController = 10
     kPThetaController = 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
+    max_module_speed = 4.5
+    module_radius_from_center = 0.3451
 
 
 class OIConstants:

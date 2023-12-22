@@ -107,6 +107,36 @@ class CustomHID:
                     value = True
         return value
 
+    def get_trigger_raw(self, trigger: str, threshold: float) -> float:
+        value = 0
+        if self.controller_type == "xbox" or "generic":
+            if trigger == "R":
+                axis = self.controller.getRawAxis(3)
+                if self.controller.getRawAxis(3) >= threshold:
+                    value = axis
+            if trigger == "L":
+                axis = self.controller.getRawAxis(2)
+                if self.controller.getRawAxis(2) >= threshold:
+                    value = axis
+        if self.controller_type == "ps4":
+            if trigger == "R":
+                axis = self.controller.getR2Axis()
+                if axis < 0:
+                    axis = (axis * -1) * 0.5
+                else:
+                    axis = (axis * 0.5) + 0.5
+                if axis >= threshold:
+                    value = axis
+            if trigger == "L":
+                axis = self.controller.getL2Axis()
+                if axis < 0:
+                    axis = (axis * -1) * 0.5
+                else:
+                    axis = (axis * 0.5) + 0.5
+                if axis >= threshold:
+                    value = axis
+        return value
+
     def get_axis(self, axis: str, deadband: float) -> float:
         value = 0.0
         if self.controller_type == "xbox" or "generic":
@@ -187,3 +217,7 @@ class CustomHID:
 
         # print("DIRECTION: " + str(self.direction))
         return self.direction
+
+    def refine_trigger(self, trigger: str, deadband: float, maxi: float, mini: float) -> float:
+        """Modification of get_trigger() that refines its output between a maximum and a minimum value"""
+        return (1 - self.get_trigger_raw(trigger, deadband)) * (maxi - mini) + mini
