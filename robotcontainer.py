@@ -25,20 +25,23 @@ class RobotContainer:
 
     def __init__(self) -> None:
         tuning_setter = False
-        DataLogManager.start()
-        DriverStation.startDataLog(DataLogManager.getLog(), True)
-        # Instantiate subsystems using their constructors.
+        # TODO Enable when you want to log data. Will Try enabling periodically.
+        # DataLogManager.start()
+        # DriverStation.startDataLog(DataLogManager.getLog(), True)
+
+        # Instantiate subsystems using their constructors if tuning mode is disabled.
         if not tuning_setter:
             self.robot_drive = DriveSubsystem()
             self.leds = LEDs(0, 30, 1, 0.03, "GRB")  # TODO CHANGE TO CORRECT LED COUNT
             self.vision_system = VisionSubsystem(self.robot_drive)
-            self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
+            # self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
 
         # Setup driver & operator controllers.
         self.driver_controller_raw = CustomHID(OIConstants.kDriverControllerPort, "xbox")
         self.operator_controller_raw = CustomHID(OIConstants.kOperatorControllerPort, "xbox")
         DriverStation.silenceJoystickConnectionWarning(True)
 
+        # Perform setup as normal, unless tuning mode is enabled.
         if not tuning_setter:
             # Set the default drive command.
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
@@ -47,7 +50,7 @@ class RobotContainer:
                     self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
                     self.driver_controller_raw.get_axis("RX", 0.06) *
                     DriveConstants.kMaxAngularSpeed,
-                    True, ),
+                    True),
                 self.robot_drive
             ))
 
@@ -64,25 +67,30 @@ class RobotContainer:
             self.m_chooser = SendableChooser()
             self.m_chooser.setDefaultOption("No-op", "N-op")
             self.m_chooser.addOption("Test", "Test")
+            self.m_chooser.addOption("Rainbow", "Rainbow")
 
             SmartDashboard.putData("Auto Select", self.m_chooser)
 
             SmartDashboard.putData("Debug Mode On", DebugMode(self.robot_drive, True))
             SmartDashboard.putData("Debug Mode Off", DebugMode(self.robot_drive, False))
 
+        # Perform setup for when tuning mode is enabled.
         else:
             self.tuner = TuningSubsystem(True, True, 50)
             self.configureTuningMode()
 
     def configureTuningMode(self) -> None:
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            commands2.cmd.run(lambda: self.tuner.id_ks_dt(0.1), self.tuner)
+            commands2.cmd.run(lambda: self.tuner.id_ks_dt(0.001), self.tuner)
         )
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
-            commands2.cmd.runOnce(lambda: self.tuner.id_kv_dt(4), self.tuner)
+            commands2.cmd.runOnce(lambda: self.tuner.id_kv_dt(6), self.tuner)
         )
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("X")).onTrue(
             commands2.cmd.runOnce(lambda: self.tuner.set_all_zero(), self.tuner)
+        )
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("Y")).onTrue(
+            commands2.cmd.runOnce(lambda: self.tuner.reset_routines(), self.tuner)
         )
 
     def configureTriggersDefault(self) -> None:
@@ -138,8 +146,19 @@ class RobotContainer:
             return None
         elif self.m_chooser.getSelected() == "Test":
             return PathPlannerAuto("Test")
+        elif self.m_chooser.getSelected() == "Rainbow":
+            return PathPlannerAuto("Rainbow")
         else:
             return None
 
     def registerCommands(self):
         NamedCommands.registerCommand("return_wheels", ReturnWheels(self.robot_drive))
+        NamedCommands.registerCommand("rainbow_leds", commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+        NamedCommands.registerCommand("flash_green",
+                                      commands2.cmd.run(lambda: self.leds.flash_color([255, 0, 0], 2), self.leds))
+        NamedCommands.registerCommand("flash_red",
+                                      commands2.cmd.run(lambda: self.leds.flash_color([0, 255, 0], 2), self.leds))
+        NamedCommands.registerCommand("flash_blue",
+                                      commands2.cmd.run(lambda: self.leds.flash_color([0, 0, 255], 2), self.leds))
+        NamedCommands.registerCommand("flash_yellow",
+                                      commands2.cmd.run(lambda: self.leds.flash_color([225, 255, 0], 2), self.leds))

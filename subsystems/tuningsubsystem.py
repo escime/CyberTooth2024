@@ -66,10 +66,10 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.bl_turn.setInverted(True)
             self.br_turn.setInverted(True)
 
-            self.fl_turn_pid = PIDController(1, 0, 0)
-            self.fr_turn_pid = PIDController(1, 0, 0)
-            self.bl_turn_pid = PIDController(1, 0, 0)
-            self.br_turn_pid = PIDController(1, 0, 0)
+            self.fl_turn_pid = PIDController(2, 0, 0)
+            self.fr_turn_pid = PIDController(2, 0, 0)
+            self.bl_turn_pid = PIDController(2, 0, 0)
+            self.br_turn_pid = PIDController(2, 0, 0)
 
             self.fl_drive.setIdleMode(CANSparkMax.IdleMode.kBrake)
             self.fr_drive.setIdleMode(CANSparkMax.IdleMode.kBrake)
@@ -79,6 +79,15 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.fr_turn.setIdleMode(CANSparkMax.IdleMode.kBrake)
             self.bl_turn.setIdleMode(CANSparkMax.IdleMode.kBrake)
             self.br_turn.setIdleMode(CANSparkMax.IdleMode.kBrake)
+
+            self.fl_turn_enc.setPosition(0)
+            self.fr_turn_enc.setPosition(0)
+            self.bl_turn_enc.setPosition(0)
+            self.br_turn_enc.setPosition(0)
+            self.fl_drive_enc.setPosition(0)
+            self.fr_drive_enc.setPosition(0)
+            self.bl_drive_enc.setPosition(0)
+            self.br_drive_enc.setPosition(0)
 
             self.fl_drive.burnFlash()
             self.fr_drive.burnFlash()
@@ -99,7 +108,6 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.voltage += 0.01
             self.single_motor.setVoltage(self.voltage)
         SmartDashboard.putNumber("Calculated kS", self.ks)
-        print(self.ks)
 
     def id_ks_dt(self, threshold: float) -> None:
         """Identify the kS term for the drivetrain."""
@@ -141,7 +149,6 @@ class TuningSubsystem(commands2.SubsystemBase):
                 self.br_drive.setVoltage(self.voltages[3])
                 self.voltages[3] += 0.01
         SmartDashboard.putNumber("Calculated kS", max(self.ks_list))
-        print(max(self.ks_list))
 
     def id_kv_sm(self, voltage):
         """Identify the kV term for a single motor."""
@@ -154,7 +161,6 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.kv = self.last_vel / voltage
             self.single_motor.setVoltage(0)
         SmartDashboard.putNumber("Calculated kV", self.kv)
-        print(self.kv)
 
     def id_kv_dt(self, voltage: float) -> None:
         """Identify the kV term for the drivetrain."""
@@ -175,6 +181,14 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.last_vel_list[1] = self.fr_drive_enc.getVelocity()
             self.last_vel_list[2] = self.bl_drive_enc.getVelocity()
             self.last_vel_list[3] = self.br_drive_enc.getVelocity()
+
+            self.kv_list[0] = self.last_vel_list[0] / voltage
+            self.kv_list[1] = self.last_vel_list[1] / voltage
+            self.kv_list[2] = self.last_vel_list[2] / voltage
+            self.kv_list[3] = self.last_vel_list[3] / voltage
+            self.kv_avg = sum(self.kv_list) / len(self.kv_list)
+
+            SmartDashboard.putNumber("Calculated kV", self.kv_avg)
         else:
             self.fl_drive.setVoltage(0)
             self.fr_drive.setVoltage(0)
@@ -188,7 +202,6 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.kv_avg = sum(self.kv_list) / len(self.kv_list)
 
         SmartDashboard.putNumber("Calculated kV", self.kv_avg)
-        print(self.kv_avg)
 
     def set_all_zero(self) -> None:
         self.fl_drive.setVoltage(0)
@@ -199,4 +212,27 @@ class TuningSubsystem(commands2.SubsystemBase):
         self.fr_turn.setVoltage(0)
         self.bl_turn.setVoltage(0)
         self.br_turn.setVoltage(0)
+        self.fl_turn_enc.setPosition(0)
+        self.fr_turn_enc.setPosition(0)
+        self.bl_turn_enc.setPosition(0)
+        self.br_turn_enc.setPosition(0)
+        self.fl_drive_enc.setPosition(0)
+        self.fr_drive_enc.setPosition(0)
+        self.bl_drive_enc.setPosition(0)
+        self.br_drive_enc.setPosition(0)
         self.single_motor.setVoltage(0)
+
+    def reset_routines(self) -> None:
+        self.ks_found = False
+        self.voltage = 0
+        self.ks = 0
+        self.ks_found_list = [False, False, False, False]
+        self.voltages = [0, 0, 0, 0]
+        self.ks_list = [0, 0, 0, 0]
+        self.stabilized = False
+        self.last_vel = 0
+        self.kv = 0
+        self.stabilized_list = [False, False, False, False]
+        self.last_vel_list = [0, 0, 0, 0]
+        self.kv_list = [0, 0, 0, 0]
+        self.kv_avg = 0

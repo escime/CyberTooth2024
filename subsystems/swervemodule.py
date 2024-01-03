@@ -6,7 +6,6 @@ from rev import CANSparkMax
 from phoenix5.sensors import CANCoder, AbsoluteSensorRange, CANCoderStatusFrame
 from constants import DriveConstants
 import math
-import time
 
 
 class SwerveModule:

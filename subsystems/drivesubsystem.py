@@ -16,6 +16,9 @@ class DriveSubsystem(commands2.SubsystemBase):
     # Creates a new DriveSubsystem
     def __init__(self) -> None:
         super().__init__()
+        self.gyro = Pigeon2(9)
+        # print("GODDAMMIT FUCK JESUS FUCK CHRIST")
+        # print(self.gyro.getFirmwareVersion())
         self.m_odometry = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
                                                     Rotation2d.fromDegrees(-self.get_heading()),
                                                     (SwerveModulePosition(0, Rotation2d(0)),
@@ -92,9 +95,6 @@ class DriveSubsystem(commands2.SubsystemBase):
             self
         )
 
-    # Instantiate gyro.
-    gyro = Pigeon2(9)
-
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
 
@@ -106,14 +106,14 @@ class DriveSubsystem(commands2.SubsystemBase):
     current_time = timer.get()
 
     def get_chassis_speeds(self):
-        """Used for 2024 PathPlanner."""
+        """Used for 2024 PathPlanner. Converts current module states to a ChassisSpeeds object."""
         return DriveConstants.m_kinematics.toChassisSpeeds((self.m_FL.get_state(),
                                                            self.m_FR.get_state(),
                                                            self.m_BL.get_state(),
                                                            self.m_BR.get_state()))
 
     def drive_by_chassis_speeds(self, chassis_speeds: ChassisSpeeds):
-        """Used for 2024 PathPlanner."""
+        """Used for 2024 PathPlanner. Takes in ChassisSpeeds, sets target module states."""
         swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(chassis_speeds)
 
         # Set all swerve module state targets and update the dashboard with the targets.
@@ -123,7 +123,13 @@ class DriveSubsystem(commands2.SubsystemBase):
         self.m_BR.set_desired_state(swerve_module_states[3])
 
     def drive_2ok(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
-        """Drive the robot with second order kinematics enabled."""
+        """
+        Drive the robot with second order kinematics enabled.
+        x_speed: Float, -max_speed to +max_speed.
+        y_speed: Float, -max_speed to +max_speed.
+        rot: Float, -max_angular_speed to + max_angular_speed.
+        field_relative: Boolean. Toggles between field relative and robot relative.
+        """
         self.current_time = self.timer.get()
         if not field_relative:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
@@ -139,11 +145,16 @@ class DriveSubsystem(commands2.SubsystemBase):
                     self.current_time - self.last_time
                 )
             )
-            self.set_module_states(swerve_module_states)
-            self.last_time = self.timer.get()
+        self.set_module_states(swerve_module_states)
+        self.last_time = self.timer.get()
 
-    def drive(self, x_speed, y_speed, rot, field_relative) -> None:
-        """The default drive command for the robot. This is the math that makes swerve drive work."""
+    def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
+        """The default drive command for the robot.
+        x_speed: Float, -max_speed to +max_speed.
+        y_speed: Float, -max_speed to +max_speed.
+        rot: Float, -max_angular_speed to + max_angular_speed.
+        field_relative: Boolean. Toggles between field relative and robot relative.
+        """
         # If in field relative mode, get swerve module states.
         if field_relative:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
@@ -174,8 +185,14 @@ class DriveSubsystem(commands2.SubsystemBase):
             SmartDashboard.putNumber("BR Target", swerve_module_states[3].angle.degrees())
             SmartDashboard.putNumber("BR Target Speed", swerve_module_states[3].speed)
 
-    def drive_slow(self, x_speed, y_speed, rot, field_relative, slow: float) -> None:
-        """Alternate drive command that reduces maximum speed by a given multiplier."""
+    def drive_slow(self, x_speed: float, y_speed: float, rot: float, field_relative: bool, slow: float) -> None:
+        """Alternate drive command that reduces maximum speed by a given multiplier.
+        x_speed: Float, -max_speed to +max_speed.
+        y_speed: Float, -max_speed to +max_speed.
+        rot: Float, -max_angular_speed to + max_angular_speed.
+        field_relative: Boolean. Toggles between field relative and robot relative.
+        slow: FLoat, 0 to 1, multiplier for speed decrease.
+        """
         self.drive(x_speed * slow, y_speed * slow, rot * slow, field_relative)
 
     def drive_lock(self) -> None:
@@ -226,11 +243,18 @@ class DriveSubsystem(commands2.SubsystemBase):
                       self.m_odometry.getEstimatedPosition().rotation())
 
     def add_vision(self, pose: Pose2d, timestamp: float):
-        """Add a vision measurement from the limelight and integrate into robot pose using a Kalman filter."""
+        """
+        Add a vision measurement from the limelight and integrate into robot pose using a Kalman filter.
+        pose: Pose2d object. Estimated pose from vision.
+        timestamp: Float. Timestamp on measurement Pose2d pulled from Limelight JSON parse.
+        """
         self.m_odometry.addVisionMeasurement(pose, timestamp)
 
     def reset_odometry(self, pose: Pose2d):
-        """Hard reset robot odometry and pose. Intended only for manual use."""
+        """
+        Hard reset robot odometry and pose. Intended only for manual use.
+        pose: Pose2D object. Pose you would like to set the robot's position to.
+        """
         self.m_FL.reset_encoders()
         self.m_FR.reset_encoders()
         self.m_BL.reset_encoders()
@@ -268,7 +292,12 @@ class DriveSubsystem(commands2.SubsystemBase):
         return -1 * self.gyro.getYaw()
 
     def snap_drive(self, x_speed: float, y_speed: float, heading_target: float):
-        """Calculate and implement the PID controller for rotating to and maintaining a target heading."""
+        """
+        Calculate and implement the PID controller for rotating to and maintaining a target heading.
+        x_speed: Float, -max_speed to +max_speed.
+        y_speed: Float, -max_speed to +max_speed.
+        heading_target: Float, degree target angle.
+        """
         current_heading = Rotation2d.fromDegrees(self.get_heading()).degrees() % 180
         correction = Rotation2d.fromDegrees(self.get_heading()).degrees() % 360
         if correction > 180:
