@@ -21,6 +21,8 @@ class LEDs(commands2.SubsystemBase):
     flash_rate = 2
     shooting = False
     shooting_counter = 0
+    amp_timer_on = False
+    amp_index = 0
 
     def __init__(self, port: int, length: int, num: int, animation_speed: float, style: str) -> None:
         super().__init__()
@@ -87,11 +89,18 @@ class LEDs(commands2.SubsystemBase):
             self.purple_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
         # Setup shoot animation default
-        self.shoot_pattern = [AddressableLED.LEDData(239, 187, 240)] * 10
+        self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 10
         for i in range(0, self.length - 10):
             self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
+        # Setup amplification timer default.
+        self.amp_length = int(self.length / 10)
+        self.amp_pattern_displayed = [AddressableLED.LEDData(0, 255, 0)] * (self.length - (self.amp_length * 2))
+        for i in range(0, self.amp_length * 2):
+            self.amp_pattern_displayed.append(AddressableLED.LEDData(0, 0, 0))
+
         self.heat = [255] * self.length
+        self.current_color = [AddressableLED.LEDData(0, 0, 0)] * self.length
 
         # Create auto_set_check patterns.
         if self.style == "RGB":
@@ -258,6 +267,23 @@ class LEDs(commands2.SubsystemBase):
         if self.shooting_counter >= self.length:
             self.shooting_counter = 0
             self.shooting = False
-            self.shoot_pattern = [AddressableLED.LEDData(239, 187, 240)] * 10
+            self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 10
             for i in range(0, self.length - 10):
                 self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
+
+    def amp_timer(self) -> None:
+        self.amp_timer_on = True
+        if self.timer.get() - 1 > self.record_time:
+            self.m_ledBuffer = self.amp_pattern_displayed
+            self.amp_pattern_displayed = [AddressableLED.LEDData(0, 255, 0)] * (8 - self.amp_index) * self.amp_length
+            for i in range(0, self.amp_index * self.amp_length):
+                self.amp_pattern_displayed.append(AddressableLED.LEDData(0, 0, 0))
+            self.record_time = self.timer.get()
+            self.amp_index += 1
+        if self.amp_index == 10:
+            self.amp_timer_on = False
+            self.amp_index = 0
+            self.amp_pattern_displayed = [AddressableLED.LEDData(0, 255, 0)] * (self.length - (self.amp_length * 2))
+            for i in range(0, self.amp_length * 2):
+                self.amp_pattern_displayed.append(AddressableLED.LEDData(0, 0, 0))
+        self.set_chain()

@@ -11,6 +11,9 @@ from wpilib import SmartDashboard, SendableChooser, DriverStation, DataLogManage
 from commands.default_leds import DefaultLEDs
 from commands.debug_mode import DebugMode
 from commands.return_wheels import ReturnWheels
+from commands.shoot_leds import ShootLEDs
+from commands.amp_leds import AmpLEDs
+from commands.flash_LL import FlashLL
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -137,6 +140,11 @@ class RobotContainer:
         # Reset robot pose to center of the field.
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
+
+        # Test space for new commands.
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
+            commands2.cmd.run(lambda: self.vision_system.aim_and_fire(self.robot_drive, "at speed", self.leds))
+        )
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.

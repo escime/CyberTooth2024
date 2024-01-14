@@ -7,7 +7,7 @@ from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from wpimath.controller import PIDController
 from subsystems.swervemodule import SwerveModule
 from constants import DriveConstants, ModuleConstants, AutoConstants
-from wpilib import SmartDashboard, Field2d, Timer
+from wpilib import SmartDashboard, Field2d, Timer, DriverStation
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.config import HolonomicPathFollowerConfig, ReplanningConfig, PIDConstants
 
@@ -92,6 +92,7 @@ class DriveSubsystem(commands2.SubsystemBase):
                 AutoConstants.module_radius_from_center,
                 ReplanningConfig()
             ),
+            self.get_path_flip,
             self
         )
 
@@ -323,3 +324,9 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def debug_toggle(self, on: bool):
         self.debug_mode = on
+
+    def get_path_flip(self) -> bool:
+        if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
+            return True
+        else:
+            return False
