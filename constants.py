@@ -85,31 +85,24 @@ class ModuleConstants:
     bl_zero_offset = -160.49
 
 
-class ArmConstants:
+class TrapperConstants:
     kP = 0.2
-    kI = 0
-    kD = 0
-    kFF = 0
-    kMinOutput = -0.3
-    kMaxOutput = 0.3
-    maxVel = 1
-    maxAcc = 1
-    minVel = -1
-    allowedErr = 0.5
-
-    masterControlID = 30
-    velocityConversion = 1
-    positionConversion = 1
+    arm_limit = 40
+    climb_limit = 30
+    trap_speed = 0.5
+    climber_preset = 0
+    climber_preset_2 = 0
+    sport_reduction = 1/16
+    sprocket_reduction = 10/46
+    neo_resolution = 1/42
+    positionConversion = 360 * neo_resolution * sprocket_reduction * sport_reduction
 
 
 class IntakeConstants:
-    current_limit = 30
-    motor_id = 31
-    high_front_power = 1
-    mid_front_power = 1
-    high_back_power = 1
-    mid_back_power = 1
-    armed_speed = 0
+    current_limit = 35
+    motor_id = 30
+    follower_id = 31
+    intake_speed = 1
 
 
 class VisionConstants:
@@ -120,3 +113,19 @@ class VisionConstants:
     rangekP = 0.05
     turn_to_target_error_max = 1  # In degrees.
     min_command = 0.05  # Should be in volts, will require tuning.
+    shooter_default_speed = 5000
+
+
+class ShooterConstants:
+    manual_shot_speed = 0
+    master_id = 0
+    follower_id = 0
+    current_limit = 38
+    shooter_kFF = 0
+    shooter_kP = 0
+    shooter_kD = 0
+    angle_kP = 0
+    feeder_speed = 0
+    threshold = 50
+    threshold_ang = 3
+    threshold_fired = 30

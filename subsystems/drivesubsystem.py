@@ -79,7 +79,6 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         self.reset_encoders()
 
-        # TODO Check functionality. Concerned about commanded speed in simulator.
         AutoBuilder.configureHolonomic(
             self.get_pose,
             self.reset_odometry,

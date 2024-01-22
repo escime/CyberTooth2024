@@ -4,6 +4,9 @@ from wpilib import SmartDashboard, DriverStation, Timer
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.ledsubsystem import LEDs
+from subsystems.shootersubsystem import ShooterSubsystem
+from subsystems.intakesubsystem import IntakeSubsystem
+from subsystems.trappersubsystem import TrapperSubsystem
 from commands.shoot_leds import ShootLEDs
 from constants import VisionConstants
 import math
@@ -31,6 +34,7 @@ class VisionSubsystem(commands2.SubsystemBase):
     approach_target_controller = PIDController(VisionConstants.rangekP, 0, 0)
     pipeline_id = 0
     vision_odo = False
+    target_locked = False
 
     def __init__(self, robot_drive: DriveSubsystem) -> None:
         super().__init__()
@@ -216,26 +220,31 @@ class VisionSubsystem(commands2.SubsystemBase):
         else:
             drive.drive(0, 0, 0, False)
 
-    def range_to_speed(self):
+    def range_to_angle(self):
         """Calculate shooter speed from range to target."""
         lookup_dist = [3.56, 0.80, 0.20]
-        lookup_speed = [31, 64.5, 125]
+        lookup_angle = [31, 64.5, 125]
         solution = -1
         for x in range(0, len(lookup_dist) - 1):
             if lookup_dist[x + 1] <= self.calculate_range_with_tag() < lookup_dist[x]:
-                m = (lookup_speed[x + 1] - lookup_speed[x]) / (lookup_dist[x + 1] - lookup_dist[x])
-                b = lookup_speed[x] - (m * lookup_dist[x])
+                m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                b = lookup_angle[x] - (m * lookup_dist[x])
                 solution = (m * self.calculate_range_with_tag()) + b
         return solution
 
-    def aim_and_fire(self, drive: DriveSubsystem, shooter: str, leds: LEDs) -> None:
+    def aim_and_fire(self, drive: DriveSubsystem,
+                     shooter: ShooterSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem) -> None:
         """Once aimed, shoot."""
         if self.has_targets():
-            print("Shooter speed to set: ", self.range_to_speed())
+            shooter.set_angle(self.range_to_angle())
+            shooter.spin_up(VisionConstants.shooter_default_speed)  # TODO check if this explodes the SPARK MAX.
             self.rotate_to_target(drive, 0, 0)  # Rotate in place.
-            if shooter == "at speed" and -VisionConstants.turn_to_target_error_max < self.tx < \
-                    VisionConstants.turn_to_target_error_max:  # change to function from shooter subsystem.
-                print("Shoot.")  # change to function from shooter subsystem.
+            if shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.tx < \
+                    VisionConstants.turn_to_target_error_max:
+                self.target_locked = True
+                intake.intake(1)
+                trapper.advance()
+                shooter.shoot()
                 ShootLEDs(leds, "fastest")
 
 

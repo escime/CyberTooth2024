@@ -7,13 +7,20 @@ from subsystems.ledsubsystem import LEDs
 from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.utilsubsystem import UtilSubsystem
 from subsystems.tuningsubsystem import TuningSubsystem
+from subsystems.shootersubsystem import ShooterSubsystem
+from subsystems.intakesubsystem import IntakeSubsystem
+from subsystems.trappersubsystem import TrapperSubsystem
 from wpilib import SmartDashboard, SendableChooser, DriverStation, DataLogManager
 from commands.default_leds import DefaultLEDs
 from commands.debug_mode import DebugMode
 from commands.return_wheels import ReturnWheels
-from commands.shoot_leds import ShootLEDs
 from commands.amp_leds import AmpLEDs
 from commands.flash_LL import FlashLL
+from commands.ready_shooter import ReadyShooter
+from commands.shoot import Shoot
+from commands.shoot_vision import ShootVision
+from commands.score_amp import ScoreAMP
+from commands.drive_to_note import DriveToNote
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -37,7 +44,10 @@ class RobotContainer:
             self.robot_drive = DriveSubsystem()
             self.leds = LEDs(0, 30, 1, 0.03, "GRB")  # TODO CHANGE TO CORRECT LED COUNT
             self.vision_system = VisionSubsystem(self.robot_drive)
-            # self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
+            self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
+            self.shooter = ShooterSubsystem()
+            self.intake = IntakeSubsystem()
+            self.trapper = TrapperSubsystem()
 
         # Setup driver & operator controllers.
         self.driver_controller_raw = CustomHID(OIConstants.kDriverControllerPort, "xbox")
@@ -141,10 +151,33 @@ class RobotContainer:
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
 
-        # Test space for new commands.
+        # Hold to manually shoot a NOTE.
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("LB")).whileTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "subwoofer"),
+                Shoot(self.shooter, self.intake, self.trapper)))
+
+        # Hold to autonomously shoot a NOTE.
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
+            ShootVision(self.shooter, self.vision_system, self.robot_drive, self.leds, self.intake, self.trapper))
+
+        # Press to prepare a NOTE in the AMP.
         commands2.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            commands2.cmd.run(lambda: self.vision_system.aim_and_fire(self.robot_drive, "at speed", self.leds))
-        )
+            commands2.cmd.runOnce(lambda: self.trapper.set_arm("amp")))
+
+        # Hold to score a NOTE in the AMP. Release to return to STOW.
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
+            ScoreAMP(self.trapper))
+
+        # Hold to drive towards and collect a NOTE.
+        commands2.Trigger(lambda: self.driver_controller_raw.get_button("B")).whileTrue(
+            DriveToNote(self.robot_drive, self.intake, self.vision_system, self.trapper))
+
+        # When a NOTE enters the trapper, flash all LEDs green.
+        commands2.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
+
+        # Start an AMPLIFICATION timer.
+        commands2.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(AmpLEDs(self.leds))
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
@@ -154,8 +187,6 @@ class RobotContainer:
             return None
         elif self.m_chooser.getSelected() == "Test":
             return PathPlannerAuto("Test")
-        elif self.m_chooser.getSelected() == "Rainbow":
-            return PathPlannerAuto("Rainbow")
         else:
             return None
 
@@ -170,3 +201,5 @@ class RobotContainer:
                                       commands2.cmd.run(lambda: self.leds.flash_color([0, 0, 255], 2), self.leds))
         NamedCommands.registerCommand("flash_yellow",
                                       commands2.cmd.run(lambda: self.leds.flash_color([225, 255, 0], 2), self.leds))
+        NamedCommands.registerCommand("flash_purple",
+                                      commands2.cmd.run(lambda: self.leds.flash_color([50, 149, 168], 2), self.leds))
