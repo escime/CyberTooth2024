@@ -18,5 +18,5 @@ class IntakeSubsystem(commands2.Subsystem):
         self.follower.burnFlash()
 
     def intake(self, voltage: float):
-        """Power the motor without changing deploy state."""
+        """Power the intake motors."""
         self.motor.setVoltage(voltage)

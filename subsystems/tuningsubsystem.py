@@ -1,7 +1,11 @@
+import logging
+
 import commands2
+# from commands2.sysid import SysIdRoutine
 from rev import CANSparkMax
 from wpilib import SmartDashboard
 from wpimath.controller import PIDController
+# from wpilib.drive import DifferentialDrive
 from constants import ModuleConstants, DriveConstants
 
 
@@ -97,6 +101,10 @@ class TuningSubsystem(commands2.SubsystemBase):
             self.fr_turn.burnFlash()
             self.bl_turn.burnFlash()
             self.br_turn.burnFlash()
+
+            # self.bl_drive.follow(self.fl_drive)
+            # self.br_drive.follow(self.fr_drive)
+            # self.drivetrain = DifferentialDrive(self.fl_drive.setVoltage, self.fr_drive.setVoltage)
 
     def id_ks_sm(self, threshold: float) -> None:
         """Identify the kS term for a single motor."""
@@ -236,3 +244,7 @@ class TuningSubsystem(commands2.SubsystemBase):
         self.last_vel_list = [0, 0, 0, 0]
         self.kv_list = [0, 0, 0, 0]
         self.kv_avg = 0
+
+    def set_common_voltage(self, voltage: float) -> None:
+        self.fl_drive.setVoltage(voltage)
+        self.fr_drive.setVoltage(voltage)

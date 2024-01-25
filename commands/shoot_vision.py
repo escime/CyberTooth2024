@@ -30,6 +30,7 @@ class ShootVision(commands2.Command):
     def initialize(self):
         self.timer.start()
         self.vision.target_locked = False
+        self.vision.vision_odo = False
 
     def execute(self) -> None:
         self.vision.aim_and_fire(self.drive, self.shooter, self.leds, self.intake, self.trapper)
@@ -47,3 +48,4 @@ class ShootVision(commands2.Command):
         self.shooter.set_known_setpoint("readied")
         self.intake.intake(0)
         self.trapper.manual_trap(0)
+        self.vision.vision_odo = True

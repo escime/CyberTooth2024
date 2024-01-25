@@ -42,6 +42,7 @@ class ShooterSubsystem(commands2.Subsystem):
 
         self.shooter_setpoint = 0
         self.angle_setpoint = 0
+        self.trim = ShooterConstants.trim
 
     def shoot(self) -> None:
         """Advance Note into shooter wheels."""
@@ -52,11 +53,16 @@ class ShooterSubsystem(commands2.Subsystem):
         self.shooter_pid.setReference(speed, CANSparkMax.ControlType.kVelocity)
         self.shooter_setpoint = speed
 
+    def increment_trim(self, amount: float):
+        self.trim += amount
+
     def get_at_speed(self) -> bool:
         """Check up shooter is at the targeted speed."""
         if self.shooter_setpoint - \
                 ShooterConstants.threshold <= self.shooter_encoder.getVelocity() <= self.shooter_setpoint + \
                 ShooterConstants.threshold:
+            return True
+        elif self.shooter_setpoint == 0:
             return True
         else:
             return False
@@ -80,12 +86,16 @@ class ShooterSubsystem(commands2.Subsystem):
     def zero_out(self) -> None:
         """Set the shooter speed to zero."""
         self.shooter_top.set(0)
+        self.feeder.set(0)
         self.shooter_setpoint = 0
 
     def set_angle(self, angle: float) -> None:
         """Set the angle of the shooter."""
         self.angle_pid.setReference(angle, CANSparkMax.ControlType.kPosition)
-        self.angle_setpoint = angle
+        if angle != 0:
+            self.angle_setpoint = angle + self.trim
+        else:
+            self.angle_setpoint = angle
 
     def set_known_setpoint(self, setpoint: str) -> None:
         """Set the shooter to a known state."""
@@ -99,6 +109,14 @@ class ShooterSubsystem(commands2.Subsystem):
         else:
             return False
 
+    def eject(self) -> None:
+        """Manually eject game pieces out the intake."""
+        self.feeder.set(-1)
+        self.shooter_top.set(-0.2)
+        self.shooter_bottom.set(-0.2)
+
     def periodic(self) -> None:
+        """Any periodic routines for the shooter."""
         SmartDashboard.putNumber("Roller Speed", self.shooter_encoder.getVelocity())
         SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
+        SmartDashboard.putNumber("Current Trim", self.trim)

@@ -215,7 +215,7 @@ class VisionSubsystem(commands2.SubsystemBase):
                 drive_output = self.approach_target_controller.calculate(target_range, ranging)
             else:
                 drive_output = 0
-            SmartDashboard.putNumber("Calculated Range", ranging)
+            SmartDashboard.putNumber("Distance to NOTE", ranging)
             drive.drive(drive_output, 0, rotate_output, False)
         else:
             drive.drive(0, 0, 0, False)

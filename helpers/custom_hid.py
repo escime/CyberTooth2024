@@ -167,6 +167,12 @@ class CustomHID:
                     value = self.controller.getRawAxis(5)
         return value
 
+    def get_axis_triggered(self, axis: str, deadband: float) -> bool:
+        if self.get_axis(axis, deadband) != 0:
+            return True
+        else:
+            return False
+
     def get_d_pad(self) -> str:
         value = "Z"
         if self.controller.getPOV() == 0:
