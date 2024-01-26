@@ -5,26 +5,12 @@ from constants import OIConstants, DriveConstants
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.ledsubsystem import LEDs
 from subsystems.visionsubsystem import VisionSubsystem
-from subsystems.utilsubsystem import UtilSubsystem
 from subsystems.tuningsubsystem import TuningSubsystem
-from subsystems.shootersubsystem import ShooterSubsystem
-from subsystems.intakesubsystem import IntakeSubsystem
-from subsystems.trappersubsystem import TrapperSubsystem
 from wpilib import SmartDashboard, SendableChooser, DriverStation, DataLogManager
 from commands.default_leds import DefaultLEDs
 from commands.debug_mode import DebugMode
 from commands.return_wheels import ReturnWheels
 from commands.turn import Turn
-from commands.amp_leds import AmpLEDs
-from commands.flash_LL import FlashLL
-from commands.ready_shooter import ReadyShooter
-from commands.shoot import Shoot
-from commands.shoot_vision import ShootVision
-from commands.score_amp import ScoreAMP
-from commands.drive_to_note import DriveToNote
-from commands.intake import Intake
-from commands.eject import Eject
-from commands.ready_amp import ReadyAMP
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -48,10 +34,6 @@ class RobotContainer:
             self.robot_drive = DriveSubsystem()
             self.leds = LEDs(0, 30, 1, 0.03, "GRB")  # TODO CHANGE TO CORRECT LED COUNT
             self.vision_system = VisionSubsystem(self.robot_drive)
-            self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
-            self.shooter = ShooterSubsystem()
-            self.intake = IntakeSubsystem()
-            self.trapper = TrapperSubsystem()
 
         # Setup driver & operator controllers.
         self.driver_controller_raw = CustomHID(OIConstants.kDriverControllerPort, "xbox")
@@ -103,7 +85,7 @@ class RobotContainer:
     def configureTuningMode(self) -> None:
 
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            commands2.cmd.run(lambda: self.tuner.id_ks_dt(0.001), self.tuner)
+            commands2.cmd.run(lambda: self.tuner.id_ks_dt(0.0001), self.tuner)
         )
         button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
             commands2.cmd.runOnce(lambda: self.tuner.id_kv_dt(6), self.tuner)
@@ -160,84 +142,6 @@ class RobotContainer:
         button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
 
-        # Hold to manually shoot a NOTE.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("LB")).whileTrue(
-            commands2.SequentialCommandGroup(
-                ReadyShooter(self.shooter, "subwoofer"),
-                Shoot(self.shooter, self.intake, self.trapper)))
-
-        # Hold to autonomously shoot a NOTE.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
-            ShootVision(self.shooter, self.vision_system, self.robot_drive, self.leds, self.intake, self.trapper))
-
-        # Press to prepare a NOTE in the AMP.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            ReadyAMP(self.trapper, self.shooter))
-
-        # Hold to score a NOTE in the AMP. Release to return to STOW.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
-            ScoreAMP(self.trapper))
-
-        # Hold to drive towards and collect a NOTE.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("B")).whileTrue(
-            DriveToNote(self.robot_drive, self.intake, self.vision_system, self.trapper, self.leds))
-
-        # When a NOTE enters the trapper, flash all LEDs green.
-        button.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
-
-        # Start an AMPLIFICATION timer.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(AmpLEDs(self.leds))
-
-        # When the robot is enabled, turn on the Time-On Meter.
-        button.Trigger(lambda: DriverStation.isEnabled()).onTrue(
-            commands2.cmd.runOnce(lambda: self.utilsys.toggle_channel(True)))
-        button.Trigger(lambda: DriverStation.isDisabled()).onTrue(
-            commands2.cmd.runOnce(lambda: self.utilsys.toggle_channel(False)))
-
-        # Manually control the arm.
-        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).toggleOnTrue(
-            commands2.cmd.run(lambda: self.trapper.manual_arm(self.operator_controller_raw.get_axis("RY", 0.1)),
-                              self.trapper))
-
-        # Manually control the climber.
-        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("LY", 0.1)).toggleOnTrue(
-            commands2.cmd.run(lambda: self.trapper.run_climb(self.operator_controller_raw.get_axis("LY", 0.1)),
-                              self.trapper))
-
-        # Manually control the trap intake.
-        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("E")).whileTrue(
-            commands2.cmd.run(lambda: self.trapper.manual_trap(0.5), self.trapper))
-        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("W")).whileTrue(
-            commands2.cmd.run(lambda: self.trapper.manual_trap(-0.5), self.trapper))
-
-        # Adjust shooter trim.
-        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("N")).onTrue(
-            commands2.cmd.runOnce(lambda: self.shooter.increment_trim(5), self.shooter))
-        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("S")).onTrue(
-            commands2.cmd.runOnce(lambda: self.shooter.increment_trim(-5), self.shooter))
-
-        # Hold to intake a NOTE.
-        button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1)).whileTrue(
-            Intake(self.intake, self.trapper))
-
-        # Hold to spit out a NOTE.
-        button.Trigger(lambda: self.operator_controller_raw.get_trigger("L", 0.1)).whileTrue(
-            Eject(self.intake, self.trapper, self.shooter))
-
-        # Press to preset for climb approach.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("B")).onTrue(
-            commands2.SequentialCommandGroup(
-                ReadyShooter(self.shooter, "stow"),
-                commands2.cmd.runOnce(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
-
-        # Press to preset for climbing.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
-            commands2.cmd.runOnce(lambda: self.trapper.set_climb_stage_2(), self.trapper))
-
-        # If climbing, set the leds to rainbow!
-        button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
-            commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
-
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
         Returns the command to run in autonomous
@@ -256,13 +160,6 @@ class RobotContainer:
 
     def registerCommands(self):
         NamedCommands.registerCommand("return_wheels", ReturnWheels(self.robot_drive))
-        NamedCommands.registerCommand("drive_to_note", DriveToNote(self.robot_drive, self.intake,
-                                                                   self.vision_system, self.trapper, self.leds))
-        NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds))
-        NamedCommands.registerCommand("shoot_vision", ShootVision(self.shooter, self.vision_system, self.robot_drive,
-                                                                  self.leds, self.intake, self.trapper))
-        NamedCommands.registerCommand("ready_shooter", ReadyShooter(self.shooter, "subwoofer"))
-        NamedCommands.registerCommand("shoot", Shoot(self.shooter, self.intake, self.trapper))
         NamedCommands.registerCommand("turn_north", Turn(self.robot_drive, 0))
         NamedCommands.registerCommand("rainbow_leds", commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
         NamedCommands.registerCommand("flash_green",

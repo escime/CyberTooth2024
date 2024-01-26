@@ -146,6 +146,17 @@ class DriveSubsystem(commands2.SubsystemBase):
                 )
             )
         self.set_module_states(swerve_module_states)
+
+        if self.debug_mode:
+            SmartDashboard.putNumber("FL Target", swerve_module_states[0].angle.degrees())
+            SmartDashboard.putNumber("FL Target Speed", swerve_module_states[0].speed)
+            SmartDashboard.putNumber("FR Target", swerve_module_states[1].angle.degrees())
+            SmartDashboard.putNumber("FR Target Speed", swerve_module_states[1].speed)
+            SmartDashboard.putNumber("BL Target", swerve_module_states[2].angle.degrees())
+            SmartDashboard.putNumber("BL Target Speed", swerve_module_states[2].speed)
+            SmartDashboard.putNumber("BR Target", swerve_module_states[3].angle.degrees())
+            SmartDashboard.putNumber("BR Target Speed", swerve_module_states[3].speed)
+
         self.last_time = self.timer.get()
 
     def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
@@ -228,19 +239,20 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         if self.debug_mode is True:
             SmartDashboard.putNumber("FL Angle", self.m_FL.get_state().angle.degrees())
-            SmartDashboard.putNumber("FL Speed", self.m_FL.get_state().speed)
+            SmartDashboard.putNumber("FL Speed", abs(self.m_FL.get_state().speed))
             SmartDashboard.putNumber("FR Angle", self.m_FR.get_state().angle.degrees())
-            SmartDashboard.putNumber("FR Speed", self.m_FR.get_state().speed)
+            SmartDashboard.putNumber("FR Speed", abs(self.m_FR.get_state().speed))
             SmartDashboard.putNumber("BL Angle", self.m_BL.get_state().angle.degrees())
-            SmartDashboard.putNumber("BL Speed", self.m_BL.get_state().speed)
+            SmartDashboard.putNumber("BL Speed", abs(self.m_BL.get_state().speed))
             SmartDashboard.putNumber("BR Angle", self.m_BR.get_state().angle.degrees())
-            SmartDashboard.putNumber("BR Speed", self.m_BR.get_state().speed)
+            SmartDashboard.putNumber("BR Speed", abs(self.m_BR.get_state().speed))
             SmartDashboard.putString("Current Command", str(self.getCurrentCommand()))
 
     def get_pose(self):
         """Return pose estimator's estimated position."""
-        return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
-                      self.m_odometry.getEstimatedPosition().rotation())
+        # return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
+        #               self.m_odometry.getEstimatedPosition().rotation())
+        return self.m_odometry.getEstimatedPosition()
 
     def add_vision(self, pose: Pose2d, timestamp: float):
         """

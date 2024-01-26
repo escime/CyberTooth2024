@@ -12,52 +12,52 @@ from wpimath.trajectory import TrapezoidProfileRadians
 class DriveConstants:
     wheel_diameter = 0.1016  # meters
     wheel_circumference = wheel_diameter * math.pi
-    drive_gear_ratio = 6.12
+    drive_gear_ratio = 6.75
     angle_gear_ratio = 21.43
 
     # d_velocity_conversion_factor = 0.0007885761
     # d_position_conversion_factor = 0.047314566  # L2 ratio is 6.746031745
     d_position_conversion_factor = wheel_circumference / drive_gear_ratio
-    d_velocity_conversion_factor = d_position_conversion_factor / 60  # Conversion from rot/min to m/s
-    kMaxSpeed = 5.06  # Set max speed in m/s 10
-    kMaxAngularSpeed = 11  # Set max rotation speed rot/s 20
+    d_velocity_conversion_factor = d_position_conversion_factor / 60  # Conversion from rot/min to m/s was /60
+    kMaxSpeed = 4.6  # Set max speed in m/s 10
+    kMaxAngularSpeed = 9  # Set max rotation speed rot/s 20
     kGyroReversed = False
 
-    m_FL_location = Translation2d(0.52705 / 2, 0.52705 / 2)
-    m_FR_location = Translation2d(0.52705 / 2, -0.52705 / 2)
-    m_BL_location = Translation2d(-0.52705 / 2, 0.52705 / 2)
-    m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
+    m_FL_location = Translation2d(0.244, 0.244)
+    m_FR_location = Translation2d(0.244, -0.244)
+    m_BL_location = Translation2d(-0.244, 0.244)
+    m_BR_location = Translation2d(-0.244, -0.244)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
     snap_controller_PID = [0.17, 0, 0]
-    drive_controller_PID = [0, 0, 0]
-    azimuth_controller_PID = [0, 0, 0]
-    drive_controller_FF = [0 / 12, 0 / 12, 0 / 12]
+    drive_controller_PID = [1.5, 0, 0]  # 1.5, 0, 0
+    azimuth_controller_PID = [2, 0, 0]  # 2, 0, 0
+    drive_controller_FF = [0.19 / 12, 2.59, 0.26]  # 0.22/12, 1.0/12, 0.23/12
+    # estimated [n/a, 2.59, 0.26]
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
-    drive_current_limit = 50  # Was 38
+    drive_current_limit = 60  # Was 38
     azimuth_current_limit = 30  # Was 38
 
     balance_PID = [0.01, 0, 0]
 
-    slew_rate_drive = 50
+    slew_rate_drive = 40  # 50
     slew_rate_turn = 0
 
 
 class AutoConstants:
-    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.85
-    kMaxAccelerationMetersPerSecondSquared = 2
+    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.5
+    kMaxAccelerationMetersPerSecondSquared = 5
 
-    kPXController = 5  # Previously 12
-    kPYController = 10  # Previously relevant
+    kPXController = 1  # Previously 12
     kPThetaController = 5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
-    max_module_speed = DriveConstants.kMaxSpeed
+    max_module_speed = DriveConstants.kMaxSpeed * 0.5
     module_distance = 0.52705  # in m
     # module_radius_from_center = math.sqrt(pow((module_distance / 2), 2) + pow((module_distance / 2), 2))
-    module_radius_from_center = 0.372681
+    module_radius_from_center = 0.345068
 
 
 class OIConstants:

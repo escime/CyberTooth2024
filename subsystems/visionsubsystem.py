@@ -4,9 +4,6 @@ from wpilib import SmartDashboard, DriverStation, Timer
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.ledsubsystem import LEDs
-from subsystems.shootersubsystem import ShooterSubsystem
-from subsystems.intakesubsystem import IntakeSubsystem
-from subsystems.trappersubsystem import TrapperSubsystem
 from commands.shoot_leds import ShootLEDs
 from constants import VisionConstants
 import math
@@ -83,6 +80,15 @@ class VisionSubsystem(commands2.SubsystemBase):
         # Calculate latency based on Limelight Timestamp.
         self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
 
+    def update_values_safe(self):
+        """Update relevant values from LL NT to robot variables."""
+        self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
+        self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
+        self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
+        self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
+        self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)
+
     def has_targets(self) -> bool:
         """Checks if the limelight can see a target."""
         if self.tv == 1:
@@ -114,7 +120,10 @@ class VisionSubsystem(commands2.SubsystemBase):
         """Reset robot odometry based on vision pose. Intended for use only during testing, since there is no auto
         to automatically update the initial pose and the software assumes (0, 0)."""
         # self.robot_drive.reset_odometry(self.vision_estimate_pose())
-        self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d(0)))
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d(0)))
+        else:
+            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(0)))
 
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
@@ -140,7 +149,9 @@ class VisionSubsystem(commands2.SubsystemBase):
             else:  # Otherwise,
                 if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
                     self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-            self.update_values()  # Update all values.
+            if self.timer.get() - 0.5 > self.record_time:
+                self.update_values_safe()  # Update all values.
+                self.record_time = self.timer.get()
 
     def toggle_camera(self) -> None:
         if self.pov == "front":
@@ -231,20 +242,4 @@ class VisionSubsystem(commands2.SubsystemBase):
                 b = lookup_angle[x] - (m * lookup_dist[x])
                 solution = (m * self.calculate_range_with_tag()) + b
         return solution
-
-    def aim_and_fire(self, drive: DriveSubsystem,
-                     shooter: ShooterSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem) -> None:
-        """Once aimed, shoot."""
-        if self.has_targets():
-            shooter.set_angle(self.range_to_angle())
-            shooter.spin_up(VisionConstants.shooter_default_speed)  # TODO check if this explodes the SPARK MAX.
-            self.rotate_to_target(drive, 0, 0)  # Rotate in place.
-            if shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.tx < \
-                    VisionConstants.turn_to_target_error_max:
-                self.target_locked = True
-                intake.intake(1)
-                trapper.advance()
-                shooter.shoot()
-                ShootLEDs(leds, "fastest")
-
 
