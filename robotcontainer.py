@@ -117,7 +117,7 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
-                -90
+                270
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
@@ -129,18 +129,24 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
-                0
+                180
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
-                180
+                0
             ), self.robot_drive))
 
         # Reset robot pose to center of the field.
         button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
+
+        # Enable odo in auto.
+        button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(
+            commands2.cmd.runOnce(lambda: self.vision_system.vision_odo_toggle()))
+        button.Trigger(lambda: DriverStation.isAutonomous()).onFalse(
+            commands2.cmd.runOnce(lambda: self.vision_system.vision_odo_toggle()))
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
