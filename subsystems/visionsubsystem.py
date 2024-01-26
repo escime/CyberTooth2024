@@ -122,7 +122,18 @@ class VisionSubsystem(commands2.SubsystemBase):
         """Reset robot odometry based on vision pose. Intended for use only during testing, since there is no auto
         to automatically update the initial pose and the software assumes (0, 0)."""
         # self.robot_drive.reset_odometry(self.vision_estimate_pose())
-        self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d(0)))
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            self.robot_drive.gyro.setYaw(0)
+            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(0)))
+        else:
+            self.robot_drive.gyro.setYaw(0)
+            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(180)))
+
+    def vision_odo_toggle(self):
+        if self.vision_odo:
+            self.vision_odo = False
+        else:
+            self.vision_odo = True
 
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""

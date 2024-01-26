@@ -17,6 +17,8 @@ class DriveSubsystem(commands2.SubsystemBase):
     def __init__(self) -> None:
         super().__init__()
         self.gyro = Pigeon2(9)
+        # print("GODDAMMIT FUCK JESUS FUCK CHRIST")
+        # print(self.gyro.getFirmwareVersion())
         self.m_odometry = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
                                                     Rotation2d.fromDegrees(-self.get_heading()),
                                                     (SwerveModulePosition(0, Rotation2d(0)),
@@ -26,7 +28,7 @@ class DriveSubsystem(commands2.SubsystemBase):
                                                     Pose2d(Translation2d(0, 0), Rotation2d(0)))
 
         # Reset odometry @ instantiation.
-        self.gyro.setYaw(0)
+        self.gyro.setYaw(180)
 
         # Setup snap controller for class-wide use.
         self.snap_controller = PIDController(DriveConstants.snap_controller_PID[0],
@@ -93,6 +95,8 @@ class DriveSubsystem(commands2.SubsystemBase):
             self
         )
 
+        self.blue_alliance = False
+
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
 
@@ -129,29 +133,23 @@ class DriveSubsystem(commands2.SubsystemBase):
         field_relative: Boolean. Toggles between field relative and robot relative.
         """
         self.current_time = self.timer.get()
+        if self.blue_alliance:
+            x_speed = -1 * x_speed
+            y_speed = -1 * y_speed
         if not field_relative:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
-                ChassisSpeeds.discretize(-x_speed, -y_speed, -rot, self.current_time - self.last_time)
+                ChassisSpeeds.discretize(x_speed, y_speed, -rot, self.current_time - self.last_time)
             )
         else:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
                 ChassisSpeeds.discretize(
-                    ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed,
-                                                          -y_speed,
+                    ChassisSpeeds.fromFieldRelativeSpeeds(x_speed,
+                                                          y_speed,
                                                           -rot,
                                                           self.get_heading_odo()),
                     self.current_time - self.last_time
                 )
             )
-            # swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
-            #     ChassisSpeeds.discretize(
-            #         ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed,
-            #                                               -y_speed,
-            #                                               -rot,
-            #                                               Rotation2d.fromDegrees(-self.get_heading())),
-            #         self.current_time - self.last_time
-            #     )
-            # )
         self.set_module_states(swerve_module_states)
 
         if self.debug_mode:
@@ -177,7 +175,7 @@ class DriveSubsystem(commands2.SubsystemBase):
         if field_relative:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
                 ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed, -y_speed, -rot,
-                                                      Rotation2d.fromDegrees(-self.get_heading())))
+                                                      self.get_heading_odo()))
         # If in robot relative mode, get swerve module states.
         else:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(ChassisSpeeds(-x_speed,
@@ -211,7 +209,7 @@ class DriveSubsystem(commands2.SubsystemBase):
         field_relative: Boolean. Toggles between field relative and robot relative.
         slow: FLoat, 0 to 1, multiplier for speed decrease.
         """
-        self.drive(x_speed * slow, y_speed * slow, rot * slow, field_relative)
+        self.drive_2ok(x_speed * slow, y_speed * slow, rot * slow, field_relative)
 
     def drive_lock(self) -> None:
         """Alternate drive command that locks all swerve modules into rotation position, a 'hard' brake setting."""
@@ -227,12 +225,16 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def periodic(self):
         """Update robot odometry, pose, and dashboard readouts."""
-        self.m_odometry.update(Rotation2d.fromDegrees(-self.get_heading()),
+        self.m_odometry.update(Rotation2d.fromDegrees(self.get_heading()),
                                (self.m_FL.get_position(),
                                 self.m_FR.get_position(),
                                 self.m_BL.get_position(),
                                 self.m_BR.get_position()))
         self.m_field.setRobotPose(self.get_pose())
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            self.blue_alliance = True
+        else:
+            self.blue_alliance = False
         if -5 < self.gyro.getRoll() < 5:
             self.balanced = True
         else:
@@ -240,6 +242,7 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         SmartDashboard.putData("Field", self.m_field)
         SmartDashboard.putNumber("Robot Heading", self.get_heading())
+        SmartDashboard.putNumber("Current Odo Heading", self.get_heading_odo().degrees())
         # SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
         # SmartDashboard.putBoolean("Balanced?", self.balanced)
         # SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
@@ -257,8 +260,9 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def get_pose(self):
         """Return pose estimator's estimated position."""
-        return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
-                      self.m_odometry.getEstimatedPosition().rotation())
+        # return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
+        #               self.m_odometry.getEstimatedPosition().rotation())
+        return self.m_odometry.getEstimatedPosition()
 
     def add_vision(self, pose: Pose2d, timestamp: float):
         """
@@ -307,7 +311,7 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def get_heading(self):
         """Retrieve robot heading from the IMU."""
-        return -1 * self.gyro.getYaw()
+        return self.gyro.getYaw()
 
     def get_heading_odo(self):
         return self.m_odometry.getEstimatedPosition().rotation()
@@ -319,13 +323,11 @@ class DriveSubsystem(commands2.SubsystemBase):
         y_speed: Float, -max_speed to +max_speed.
         heading_target: Float, degree target angle.
         """
-        # TODO Change this to odo if may crazy code fix for pose estimation works
-        current_heading = Rotation2d.fromDegrees(self.get_heading()).degrees() % 180
-        correction = Rotation2d.fromDegrees(self.get_heading()).degrees() % 360
-        if correction > 180:
-            current_heading = current_heading - 180
-        rotate_output = self.snap_controller.calculate(current_heading, heading_target)
-        self.drive(x_speed, y_speed, rotate_output, True)
+        current_heading = self.get_heading_odo().degrees()
+        if self.blue_alliance:
+            heading_target = heading_target + 180
+        rotate_output = self.snap_controller.calculate(heading_target, current_heading)
+        self.drive_2ok(x_speed, y_speed, rotate_output, True)
 
     def auto_balance(self, front_back: int):
         """Automatically balance on the charge station. front_back = 1 for forward. -1 for backward."""
