@@ -17,8 +17,6 @@ class DriveSubsystem(commands2.SubsystemBase):
     def __init__(self) -> None:
         super().__init__()
         self.gyro = Pigeon2(9)
-        # print("GODDAMMIT FUCK JESUS FUCK CHRIST")
-        # print(self.gyro.getFirmwareVersion())
         self.m_odometry = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
                                                     Rotation2d.fromDegrees(-self.get_heading()),
                                                     (SwerveModulePosition(0, Rotation2d(0)),
@@ -141,11 +139,31 @@ class DriveSubsystem(commands2.SubsystemBase):
                     ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed,
                                                           -y_speed,
                                                           -rot,
-                                                          Rotation2d.fromDegrees(-self.get_heading())),
+                                                          self.get_heading_odo()),
                     self.current_time - self.last_time
                 )
             )
+            # swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
+            #     ChassisSpeeds.discretize(
+            #         ChassisSpeeds.fromFieldRelativeSpeeds(-x_speed,
+            #                                               -y_speed,
+            #                                               -rot,
+            #                                               Rotation2d.fromDegrees(-self.get_heading())),
+            #         self.current_time - self.last_time
+            #     )
+            # )
         self.set_module_states(swerve_module_states)
+
+        if self.debug_mode:
+            SmartDashboard.putNumber("FL Target", swerve_module_states[0].angle.degrees())
+            SmartDashboard.putNumber("FL Target Speed", swerve_module_states[0].speed)
+            SmartDashboard.putNumber("FR Target", swerve_module_states[1].angle.degrees())
+            SmartDashboard.putNumber("FR Target Speed", swerve_module_states[1].speed)
+            SmartDashboard.putNumber("BL Target", swerve_module_states[2].angle.degrees())
+            SmartDashboard.putNumber("BL Target Speed", swerve_module_states[2].speed)
+            SmartDashboard.putNumber("BR Target", swerve_module_states[3].angle.degrees())
+            SmartDashboard.putNumber("BR Target Speed", swerve_module_states[3].speed)
+
         self.last_time = self.timer.get()
 
     def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
@@ -222,19 +240,19 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         SmartDashboard.putData("Field", self.m_field)
         SmartDashboard.putNumber("Robot Heading", self.get_heading())
-        SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
-        SmartDashboard.putBoolean("Balanced?", self.balanced)
-        SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
+        # SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
+        # SmartDashboard.putBoolean("Balanced?", self.balanced)
+        # SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
 
         if self.debug_mode is True:
             SmartDashboard.putNumber("FL Angle", self.m_FL.get_state().angle.degrees())
-            SmartDashboard.putNumber("FL Speed", self.m_FL.get_state().speed)
+            SmartDashboard.putNumber("FL Speed", abs(self.m_FL.get_state().speed))
             SmartDashboard.putNumber("FR Angle", self.m_FR.get_state().angle.degrees())
-            SmartDashboard.putNumber("FR Speed", self.m_FR.get_state().speed)
+            SmartDashboard.putNumber("FR Speed", abs(self.m_FR.get_state().speed))
             SmartDashboard.putNumber("BL Angle", self.m_BL.get_state().angle.degrees())
-            SmartDashboard.putNumber("BL Speed", self.m_BL.get_state().speed)
+            SmartDashboard.putNumber("BL Speed", abs(self.m_BL.get_state().speed))
             SmartDashboard.putNumber("BR Angle", self.m_BR.get_state().angle.degrees())
-            SmartDashboard.putNumber("BR Speed", self.m_BR.get_state().speed)
+            SmartDashboard.putNumber("BR Speed", abs(self.m_BR.get_state().speed))
             SmartDashboard.putString("Current Command", str(self.getCurrentCommand()))
 
     def get_pose(self):
@@ -259,8 +277,8 @@ class DriveSubsystem(commands2.SubsystemBase):
         self.m_FR.reset_encoders()
         self.m_BL.reset_encoders()
         self.m_BR.reset_encoders()
-        self.zero_heading()
-        self.gyro.setYaw(pose.rotation().degrees())
+        # self.zero_heading()
+        # self.gyro.setYaw(pose.rotation().degrees())
         self.m_odometry.resetPosition(Rotation2d.fromDegrees(-self.get_heading()),
                                       (SwerveModulePosition(0, self.m_FL_position.angle),
                                        SwerveModulePosition(0, self.m_FR_position.angle),
@@ -291,6 +309,9 @@ class DriveSubsystem(commands2.SubsystemBase):
         """Retrieve robot heading from the IMU."""
         return -1 * self.gyro.getYaw()
 
+    def get_heading_odo(self):
+        return self.m_odometry.getEstimatedPosition().rotation()
+
     def snap_drive(self, x_speed: float, y_speed: float, heading_target: float):
         """
         Calculate and implement the PID controller for rotating to and maintaining a target heading.
@@ -298,6 +319,7 @@ class DriveSubsystem(commands2.SubsystemBase):
         y_speed: Float, -max_speed to +max_speed.
         heading_target: Float, degree target angle.
         """
+        # TODO Change this to odo if may crazy code fix for pose estimation works
         current_heading = Rotation2d.fromDegrees(self.get_heading()).degrees() % 180
         correction = Rotation2d.fromDegrees(self.get_heading()).degrees() % 360
         if correction > 180:

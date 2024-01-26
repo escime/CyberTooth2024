@@ -29,32 +29,31 @@ class DriveConstants:
     m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
-    snap_controller_PID = [0.17, 0, 0]
+    snap_controller_PID = [0, 0, 0]
     drive_controller_PID = [0, 0, 0]
     azimuth_controller_PID = [0, 0, 0]
     drive_controller_FF = [0 / 12, 0 / 12, 0 / 12]
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
-    drive_current_limit = 50  # Was 38
+    drive_current_limit = 60  # Was 38
     azimuth_current_limit = 30  # Was 38
 
     balance_PID = [0.01, 0, 0]
 
-    slew_rate_drive = 50
+    slew_rate_drive = 40
     slew_rate_turn = 0
 
 
 class AutoConstants:
-    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.85
+    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.5
     kMaxAccelerationMetersPerSecondSquared = 2
 
     kPXController = 5  # Previously 12
-    kPYController = 10  # Previously relevant
     kPThetaController = 5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
-    max_module_speed = DriveConstants.kMaxSpeed
+    max_module_speed = kMaxSpeedMetersPerSecond
     module_distance = 0.52705  # in m
     # module_radius_from_center = math.sqrt(pow((module_distance / 2), 2) + pow((module_distance / 2), 2))
     module_radius_from_center = 0.372681

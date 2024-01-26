@@ -83,6 +83,14 @@ class VisionSubsystem(commands2.SubsystemBase):
         # Calculate latency based on Limelight Timestamp.
         self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
 
+    def update_values_safe(self):
+        """Update relevant values from LL NT to robot variables."""
+        self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
+        self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
+        self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
+        self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
+
     def has_targets(self) -> bool:
         """Checks if the limelight can see a target."""
         if self.tv == 1:
@@ -140,7 +148,7 @@ class VisionSubsystem(commands2.SubsystemBase):
             else:  # Otherwise,
                 if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
                     self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-            self.update_values()  # Update all values.
+            self.update_values_safe()  # Update all values.
 
     def toggle_camera(self) -> None:
         if self.pov == "front":
