@@ -84,8 +84,7 @@ class RobotContainer:
             self.m_chooser = SendableChooser()
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
-                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "A_Score2_Fast",
-                               "C_Score2_Fast"]
+                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)

@@ -32,7 +32,7 @@ class DriveConstants:
     snap_controller_PID = [0, 0, 0]
     drive_controller_PID = [0, 0, 0]
     azimuth_controller_PID = [0, 0, 0]
-    drive_controller_FF = [0 / 12, 0 / 12, 0 / 12]
+    drive_controller_FF = [0 / 12, 0 / 12, 0 / 12]  # n/a, 2.35, 0.44
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
