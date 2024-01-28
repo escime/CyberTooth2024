@@ -5,7 +5,7 @@ from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.ledsubsystem import LEDs
 from commands.shoot_leds import ShootLEDs
-from constants import VisionConstants
+from constants import VisionConstants, DriveConstants
 import math
 from wpimath.controller import PIDController
 
@@ -206,11 +206,16 @@ class VisionSubsystem(commands2.SubsystemBase):
         if self.has_targets():
             if self.tx < -VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(0, self.tx) + VisionConstants.min_command
+                self.target_locked = False
             elif self.tx > VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(0, self.tx) - VisionConstants.min_command
+                self.target_locked = False
             else:
                 rotate_output = 0
-            drive.drive(x_speed, y_speed, rotate_output, True)
+                self.target_locked = True
+        else:
+            rotate_output = 0
+        drive.drive_2ok(x_speed, y_speed, rotate_output * DriveConstants.kMaxAngularSpeed, True)
 
     def calculate_range_area(self):
         """This is intended for 'bad' ranging using area for something like closing to a game piece."""
@@ -235,9 +240,9 @@ class VisionSubsystem(commands2.SubsystemBase):
             else:
                 drive_output = 0
             SmartDashboard.putNumber("Distance to NOTE", ranging)
-            drive.drive(drive_output, 0, rotate_output, False)
+            drive.drive_2ok(drive_output, 0, rotate_output, False)
         else:
-            drive.drive(0, 0, 0, False)
+            drive.drive_2ok(0, 0, 0, False)
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""

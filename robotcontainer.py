@@ -11,6 +11,7 @@ from commands.default_leds import DefaultLEDs
 from commands.debug_mode import DebugMode
 from commands.return_wheels import ReturnWheels
 from commands.turn import Turn
+from commands.flash_LL import FlashLL
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -110,7 +111,7 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis("RX", 0.06) * DriveConstants.kMaxAngularSpeed,
                 True,
-                self.driver_controller_raw.refine_trigger("R", 0.05, 0.9, 0.1)), self.robot_drive))
+                self.driver_controller_raw.refine_trigger("R", 0.05, 0.9, 0.3)), self.robot_drive))
 
         # Press any direction on the D-pad to enable PID snap to that equivalent angle based on field orientation
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
@@ -143,10 +144,18 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
 
         # Enable odo in auto.
-        button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(
+        button.Trigger(lambda: self.driver_controller_raw.get_button("LB")).onTrue(
             commands2.cmd.runOnce(lambda: self.vision_system.vision_odo_toggle()))
-        button.Trigger(lambda: DriverStation.isAutonomous()).onFalse(
-            commands2.cmd.runOnce(lambda: self.vision_system.vision_odo_toggle()))
+
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.vision_system.rotate_to_target(self.robot_drive,
+                                                                          self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeed,
+                                                                          self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeed,
+                                                                          ), self.vision_system, self.robot_drive)
+        )
+
+        button.Trigger(lambda: self.vision_system.target_locked).onTrue(
+            FlashLL(self.vision_system, self.leds))
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.

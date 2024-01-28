@@ -111,10 +111,10 @@ class VisionConstants:
     rotation_from_horizontal = 0  # In degrees.
     lens_height = 25  # In inches.
     tag_heights = [20, 20, 20, 20, 20, 20, 20, 20]  # In inches.
-    turnkP = 0.2  # Will require tuning.
+    turnkP = 0.01  # Will require tuning.
     rangekP = 0.05
-    turn_to_target_error_max = 1  # In degrees.
-    min_command = 0.05  # Should be in volts, will require tuning.
+    turn_to_target_error_max = 2  # In degrees.
+    min_command = 0.00  # Should be in volts, will require tuning.
     shooter_default_speed = 5000
 
 
