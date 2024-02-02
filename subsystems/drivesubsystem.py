@@ -17,7 +17,6 @@ class DriveSubsystem(commands2.SubsystemBase):
     def __init__(self) -> None:
         super().__init__()
         self.gyro = Pigeon2(9)
-        # print("GODDAMMIT FUCK JESUS FUCK CHRIST")
         # print(self.gyro.getFirmwareVersion())
         self.m_odometry = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
                                                     Rotation2d.fromDegrees(-self.get_heading()),
@@ -51,25 +50,25 @@ class DriveSubsystem(commands2.SubsystemBase):
                                  CANCoder(ModuleConstants.fl_encoder_id),
                                  ModuleConstants.fl_zero_offset,
                                  True,
-                                 True)
+                                 False)
         self.m_FR = SwerveModule(CANSparkMax(ModuleConstants.fr_drive_id, CANSparkMax.MotorType.kBrushless),
                                  CANSparkMax(ModuleConstants.fr_turn_id, CANSparkMax.MotorType.kBrushless),
                                  CANCoder(ModuleConstants.fr_encoder_id),
                                  ModuleConstants.fr_zero_offset,
                                  True,
-                                 True)
+                                 False)
         self.m_BL = SwerveModule(CANSparkMax(ModuleConstants.bl_drive_id, CANSparkMax.MotorType.kBrushless),
                                  CANSparkMax(ModuleConstants.bl_turn_id, CANSparkMax.MotorType.kBrushless),
                                  CANCoder(ModuleConstants.bl_encoder_id),
                                  ModuleConstants.bl_zero_offset,
                                  True,
-                                 True)
+                                 False)
         self.m_BR = SwerveModule(CANSparkMax(ModuleConstants.br_drive_id, CANSparkMax.MotorType.kBrushless),
                                  CANSparkMax(ModuleConstants.br_turn_id, CANSparkMax.MotorType.kBrushless),
                                  CANCoder(ModuleConstants.br_encoder_id),
                                  ModuleConstants.br_zero_offset,
                                  True,
-                                 True)
+                                 False)
 
         # Set initial value of software-tracked position.
         self.m_FL_position = self.m_FL.get_position()

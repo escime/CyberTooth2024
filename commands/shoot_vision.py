@@ -25,12 +25,14 @@ class ShootVision(commands2.Command):
         self.addRequirements(intake)
         self.addRequirements(trapper)
         self.timer = Timer()
-        self.start_time = 0
+        self.start_time = 10000000
+        self.overrun_time = 0
 
     def initialize(self):
         self.timer.start()
         self.vision.target_locked = False
         self.vision.vision_odo = False
+        self.overrun_time = self.timer.get()
 
     def execute(self) -> None:
         self.vision.aim_and_fire(self.drive, self.shooter, self.leds, self.intake, self.trapper)
@@ -39,7 +41,7 @@ class ShootVision(commands2.Command):
 
     def isFinished(self) -> bool:
         # TODO replace with a different condition later.
-        if self.timer.get() - 1 > self.start_time:
+        if self.timer.get() - 1 > self.start_time or self.timer.get() - 5 > self.overrun_time:
             return True
         else:
             return False
@@ -48,4 +50,4 @@ class ShootVision(commands2.Command):
         self.shooter.set_known_setpoint("readied")
         self.intake.intake(0)
         self.trapper.manual_trap(0)
-        self.vision.vision_odo = True
+        print("ShootVision complete.")

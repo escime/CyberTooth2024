@@ -36,3 +36,4 @@ class Shoot(commands2.Command):
         self.shooter.set_known_setpoint("readied")
         self.intake.intake(0)
         self.trapper.manual_trap(0)
+        print("Shoot complete.")

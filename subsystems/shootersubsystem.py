@@ -50,7 +50,11 @@ class ShooterSubsystem(commands2.Subsystem):
 
     def spin_up(self, speed: float) -> None:
         """Spin up shooter."""
-        self.shooter_pid.setReference(speed, CANSparkMax.ControlType.kVelocity)
+        if speed == 0:
+            self.shooter_top.set(0)
+            self.shooter_bottom.set(0)
+        else:
+            self.shooter_pid.setReference(speed, CANSparkMax.ControlType.kVelocity)
         self.shooter_setpoint = speed
 
     def increment_trim(self, amount: float):

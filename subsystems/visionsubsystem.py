@@ -8,7 +8,7 @@ from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from commands.shoot_leds import ShootLEDs
-from constants import VisionConstants
+from constants import VisionConstants, DriveConstants
 import math
 from wpimath.controller import PIDController
 
@@ -129,12 +129,6 @@ class VisionSubsystem(commands2.SubsystemBase):
             self.robot_drive.gyro.setYaw(0)
             self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(180)))
 
-    def vision_odo_toggle(self):
-        if self.vision_odo:
-            self.vision_odo = False
-        else:
-            self.vision_odo = True
-
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
         if self.vision_odo:  # Enable vision-based odometry.
@@ -159,7 +153,9 @@ class VisionSubsystem(commands2.SubsystemBase):
             else:  # Otherwise,
                 if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
                     self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-            self.update_values_safe()  # Update all values.
+            if self.timer.get() - 0.02 > self.record_time:
+                self.update_values_safe()  # Update all values.
+                self.record_time = self.timer.get()
 
     def toggle_camera(self) -> None:
         if self.pov == "front":
@@ -191,6 +187,12 @@ class VisionSubsystem(commands2.SubsystemBase):
     def pipeline_switch(self, pipeline_id: int):
         self.pipeline_id = pipeline_id
 
+    def vision_odo_toggle(self):
+        if self.vision_odo:
+            self.vision_odo = False
+        else:
+            self.vision_odo = True
+
     def calculate_range_with_tag(self):
         """Range from target (for shooter)."""
         if self.tag_id in [1, 2, 3, 6, 7, 8]:
@@ -206,11 +208,16 @@ class VisionSubsystem(commands2.SubsystemBase):
         if self.has_targets():
             if self.tx < -VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(0, self.tx) + VisionConstants.min_command
+                self.target_locked = False
             elif self.tx > VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(0, self.tx) - VisionConstants.min_command
+                self.target_locked = False
             else:
                 rotate_output = 0
-            drive.drive(x_speed, y_speed, rotate_output, True)
+                self.target_locked = True
+        else:
+            rotate_output = 0
+        drive.drive_2ok(x_speed, y_speed, rotate_output * DriveConstants.kMaxAngularSpeed, True)
 
     def calculate_range_area(self):
         """This is intended for 'bad' ranging using area for something like closing to a game piece."""
@@ -235,9 +242,9 @@ class VisionSubsystem(commands2.SubsystemBase):
             else:
                 drive_output = 0
             SmartDashboard.putNumber("Distance to NOTE", ranging)
-            drive.drive(drive_output, 0, rotate_output, False)
+            drive.drive_2ok(drive_output, 0, rotate_output, False)
         else:
-            drive.drive(0, 0, 0, False)
+            drive.drive_2ok(0, 0, 0, False)
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""

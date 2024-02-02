@@ -20,7 +20,9 @@ class DriveConstants:
     d_position_conversion_factor = wheel_circumference / drive_gear_ratio
     d_velocity_conversion_factor = d_position_conversion_factor / 60  # Conversion from rot/min to m/s
     kMaxSpeed = 5.06  # Set max speed in m/s 10
+    kMaxSpeedTeleop = kMaxSpeed * 1.75
     kMaxAngularSpeed = 11  # Set max rotation speed rot/s 20
+    kMaxAngularSpeedTeleop = kMaxAngularSpeed * 1.75
     kGyroReversed = False
 
     m_FL_location = Translation2d(0.52705 / 2, 0.52705 / 2)
@@ -30,9 +32,9 @@ class DriveConstants:
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
     snap_controller_PID = [0, 0, 0]
-    drive_controller_PID = [0, 0, 0]
-    azimuth_controller_PID = [0, 0, 0]
-    drive_controller_FF = [0 / 12, 0 / 12, 0 / 12]  # n/a, 2.35, 0.44
+    drive_controller_PID = [2, 0, 0]
+    azimuth_controller_PID = [2, 0, 0]
+    drive_controller_FF = [0.20 / 12, 2.35 / 12, 0.44 / 12]  # n/a, 2.35, 0.44
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
@@ -50,7 +52,7 @@ class AutoConstants:
     kMaxAccelerationMetersPerSecondSquared = 2
 
     kPXController = 5  # Previously 12
-    kPThetaController = 5  # Previously 10
+    kPThetaController = 7  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond
@@ -68,22 +70,22 @@ class ModuleConstants:
     fl_drive_id = 10
     fl_turn_id = 11
     fl_encoder_id = 12
-    fl_zero_offset = -264.11
+    fl_zero_offset = -248.91
 
     fr_drive_id = 13
     fr_turn_id = 14
     fr_encoder_id = 15
-    fr_zero_offset = -297.77
+    fr_zero_offset = -223.33
 
-    br_drive_id = 16
-    br_turn_id = 17
-    br_encoder_id = 18
-    br_zero_offset = -77.34
+    br_drive_id = 19
+    br_turn_id = 20
+    br_encoder_id = 21
+    br_zero_offset = -53.53
 
-    bl_drive_id = 19
-    bl_turn_id = 20
-    bl_encoder_id = 21
-    bl_zero_offset = -160.49
+    bl_drive_id = 16
+    bl_turn_id = 17
+    bl_encoder_id = 18
+    bl_zero_offset = -202.85
 
 
 class TrapperConstants:
@@ -110,24 +112,23 @@ class VisionConstants:
     rotation_from_horizontal = 0  # In degrees.
     lens_height = 25  # In inches.
     tag_heights = [20, 20, 20, 20, 20, 20, 20, 20]  # In inches.
-    turnkP = 0.2  # Will require tuning.
+    turnkP = 0.01  # Will require tuning.
     rangekP = 0.05
-    turn_to_target_error_max = 1  # In degrees.
-    min_command = 0.05  # Should be in volts, will require tuning.
+    turn_to_target_error_max = 2  # In degrees.
+    min_command = 0.01  # Should be in volts, will require tuning.
     shooter_default_speed = 5000
 
 
 class ShooterConstants:
-    manual_shot_speed = 0
-    master_id = 0
-    follower_id = 0
+    master_id = 33
+    follower_id = 34
     current_limit = 38
-    shooter_kFF = 0
+    shooter_kFF = 0  # estimated 0.19 Vs/m
     shooter_kP = 0
     shooter_kD = 0
     angle_kP = 0
     feeder_speed = 0
     threshold = 50
-    threshold_ang = 3
+    threshold_ang = 1
     threshold_fired = 30
     trim = 0

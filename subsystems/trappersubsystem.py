@@ -1,12 +1,15 @@
 import commands2
 from constants import TrapperConstants
 from rev import CANSparkMax
-from wpilib import DigitalInput, SmartDashboard
+from wpilib import DigitalInput, SmartDashboard, Mechanism2d
 
 
 class TrapperSubsystem(commands2.Subsystem):
 
     setpoints = {"stage": 0, "trap": 0, "amp": 0, "stow": 0}
+    mech = Mechanism2d(6, 3)
+    mech_root = mech.getRoot("core", 3, 0)
+    mech_arm = mech_root.appendLigament("Arm", 3, 0)
 
     def __init__(self) -> None:
         super().__init__()
@@ -40,6 +43,7 @@ class TrapperSubsystem(commands2.Subsystem):
         # Setup encoders.
         self.arm_encoder = self.arm.getEncoder()
         self.arm_encoder.setPosition(0)
+        self.arm_encoder.setPositionConversionFactor(TrapperConstants.positionConversion)
         self.climb_encoder = self.climb.getEncoder()
         self.climb_encoder.setPosition(0)
 
@@ -119,3 +123,5 @@ class TrapperSubsystem(commands2.Subsystem):
         """Any periodic routines for the trapper."""
         SmartDashboard.putNumber("Arm Position", self.arm_encoder.getPosition())
         SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
+        self.mech_arm.setAngle(self.arm_encoder.getPosition())
+        SmartDashboard.putData("Arm Mech2d", self.mech)
