@@ -89,10 +89,11 @@ class ModuleConstants:
 
 
 class TrapperConstants:
-    kP = 0.2
-    arm_limit = 40
-    climb_limit = 30
+    kP = 0.05
+    arm_limit = 60
+    climb_limit = 60
     trap_speed = 0.5
+    amp_speed = 1
     climber_preset = 0
     climber_preset_2 = 0
     sport_reduction = 1/16
@@ -109,14 +110,15 @@ class IntakeConstants:
 
 
 class VisionConstants:
-    rotation_from_horizontal = 0  # In degrees.
-    lens_height = 25  # In inches.
-    tag_heights = [20, 20, 20, 20, 20, 20, 20, 20]  # In inches.
+    rotation_from_horizontal = 30.5  # In degrees.
+    lens_height = 20.52718  # In inches.
+    tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
+                   52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
     turnkP = 0.01  # Will require tuning.
     rangekP = 0.05
     turn_to_target_error_max = 2  # In degrees.
     min_command = 0.01  # Should be in volts, will require tuning.
-    shooter_default_speed = 5000
+    shooter_default_speed = 3000
 
 
 class ShooterConstants:

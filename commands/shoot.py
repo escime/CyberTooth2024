@@ -8,7 +8,6 @@ from wpilib import Timer
 class Shoot(commands2.Command):
     def __init__(self, shooter: ShooterSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem):
         super().__init__()
-        # TODO will need to import intake/trap mechanism to complete feeding.
         self.shooter = shooter
         self.intake = intake
         self.trapper = trapper

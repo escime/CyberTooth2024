@@ -168,7 +168,7 @@ class CustomHID:
         return value
 
     def get_axis_triggered(self, axis: str, deadband: float) -> bool:
-        if self.get_axis(axis, deadband) != 0:
+        if self.get_axis(axis, deadband) <= -1 * deadband or self.get_axis(axis, deadband) >= deadband:
             return True
         else:
             return False

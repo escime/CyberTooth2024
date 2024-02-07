@@ -90,6 +90,7 @@ class VisionSubsystem(commands2.SubsystemBase):
         self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
+        self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)  # Get which tag is currently in view.
 
     def has_targets(self) -> bool:
         """Checks if the limelight can see a target."""
@@ -157,6 +158,10 @@ class VisionSubsystem(commands2.SubsystemBase):
                 self.update_values_safe()  # Update all values.
                 self.record_time = self.timer.get()
 
+        SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
+        SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
+        SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
+
     def toggle_camera(self) -> None:
         if self.pov == "front":
             self.pov = "back"
@@ -195,9 +200,9 @@ class VisionSubsystem(commands2.SubsystemBase):
 
     def calculate_range_with_tag(self):
         """Range from target (for shooter)."""
-        if self.tag_id in [1, 2, 3, 6, 7, 8]:
+        if self.tag_id in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]:
             angle_to_goal = (VisionConstants.rotation_from_horizontal + self.ty) * math.pi / 180
-            target_range = (VisionConstants.tag_heights[self.tag_id] -
+            target_range = (VisionConstants.tag_heights[self.tag_id - 1] -
                             VisionConstants.lens_height) / math.atan(angle_to_goal)
         else:
             target_range = -1
