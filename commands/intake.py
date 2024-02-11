@@ -6,6 +6,7 @@ from constants import IntakeConstants
 
 class Intake(commands2.Command):
 
+    # TODO Add a timeout here in case the sensors stop working.
     def __init__(self, intake: IntakeSubsystem, trapper: TrapperSubsystem):
         super().__init__()
         self.intake = intake

@@ -8,13 +8,12 @@ from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from commands.shoot_leds import ShootLEDs
-from constants import VisionConstants, DriveConstants
+from constants import VisionConstants, DriveConstants, GlobalVariables
 import math
 from wpimath.controller import PIDController
 
 
-class VisionSubsystem(commands2.SubsystemBase):
-    limelight_table: NetworkTableInstance.getDefault().getTable("limelight")
+class VisionSubsystem(commands2.Subsystem):
     tv = 0.0
     tvf = 0.0
     ta = 0.0
@@ -36,9 +35,9 @@ class VisionSubsystem(commands2.SubsystemBase):
     vision_odo = False
     target_locked = False
 
-    def __init__(self, robot_drive: DriveSubsystem) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.robot_drive = robot_drive  # This is structurally not great but necessary for certain features.
+        # self.robot_drive = robot_drive  # This is structurally not great but necessary for certain features.
         self.limelight_table = NetworkTableInstance.getDefault().getTable("limelight")
         self.limelight_front = NetworkTableInstance.getDefault().getTable("llf")
         self.timer.start()
@@ -119,16 +118,16 @@ class VisionSubsystem(commands2.SubsystemBase):
 #     def get_latency(self):
 #         return Timer.getFPGATimestamp() - wpimath.units.millisecondsToSeconds(self.tl)
 
-    def reset_hard_odo(self):
+    def reset_hard_odo(self, robot_drive: DriveSubsystem):
         """Reset robot odometry based on vision pose. Intended for use only during testing, since there is no auto
         to automatically update the initial pose and the software assumes (0, 0)."""
         # self.robot_drive.reset_odometry(self.vision_estimate_pose())
         if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            self.robot_drive.gyro.setYaw(0)
-            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(0)))
+            robot_drive.gyro.setYaw(0)
+            robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(0)))
         else:
-            self.robot_drive.gyro.setYaw(0)
-            self.robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(180)))
+            robot_drive.gyro.setYaw(0)
+            robot_drive.reset_odometry(Pose2d(Translation2d(8.12, 4), Rotation2d.fromDegrees(180)))
 
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
@@ -140,11 +139,11 @@ class VisionSubsystem(commands2.SubsystemBase):
             if self.timer.get() - 0.5 > self.record_time:  # If it's been 0.5s since last update,
                 self.update_values()  # Update limelight values.
                 if self.has_targets():  # If an AprilTag is visible,
-                    current_position = self.robot_drive.get_pose()  # Grab current pose.
-                    vision_estimate = self.vision_estimate_pose()  # Estimate pose from vision.
-                    if abs(current_position.x - vision_estimate.x) < 1 and \
-                            abs(current_position.y - vision_estimate.y) < 1:  # Check if poses are within 1m.
-                        self.robot_drive.add_vision(vision_estimate, self.latency)  # Add vision to kalman filter.
+                    GlobalVariables.current_vision = self.vision_estimate_pose()  # Estimate pose from vision.
+                    GlobalVariables.timestamp = self.latency
+                #     if abs(current_position.x - vision_estimate.x) < 1 and \
+                #             abs(current_position.y - vision_estimate.y) < 1:  # Check if poses are within 1m.
+                #         self.robot_drive.add_vision(vision_estimate, self.latency)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -158,9 +157,10 @@ class VisionSubsystem(commands2.SubsystemBase):
                 self.update_values_safe()  # Update all values.
                 self.record_time = self.timer.get()
 
+        SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
         SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
         SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
-        SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
+        # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
 
     def toggle_camera(self) -> None:
         if self.pov == "front":
@@ -200,13 +200,16 @@ class VisionSubsystem(commands2.SubsystemBase):
 
     def calculate_range_with_tag(self):
         """Range from target (for shooter)."""
-        if self.tag_id in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]:
-            angle_to_goal = (VisionConstants.rotation_from_horizontal + self.ty) * math.pi / 180
-            target_range = (VisionConstants.tag_heights[self.tag_id - 1] -
-                            VisionConstants.lens_height) / math.atan(angle_to_goal)
+        if self.has_targets():
+            if self.tag_id in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]:
+                angle_to_goal = (VisionConstants.rotation_from_horizontal + self.ty) * math.pi / 180
+                target_range = (VisionConstants.tag_heights[self.tag_id - 1] -
+                                VisionConstants.lens_height) / math.atan(angle_to_goal)
+            else:
+                target_range = -1
+            return target_range
         else:
-            target_range = -1
-        return target_range
+            return -1
 
     def rotate_to_target(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
         """Aim at target (for shooter.)"""
@@ -255,18 +258,25 @@ class VisionSubsystem(commands2.SubsystemBase):
         """Calculate shooter speed from range to target."""
         lookup_dist = [3.56, 0.80, 0.20]
         lookup_angle = [31, 64.5, 125]
-        solution = -1
-        for x in range(0, len(lookup_dist) - 1):
-            if lookup_dist[x + 1] <= self.calculate_range_with_tag() < lookup_dist[x]:
-                m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
-                b = lookup_angle[x] - (m * lookup_dist[x])
-                solution = (m * self.calculate_range_with_tag()) + b
-        return solution
+        if self.has_targets():
+            if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
+                solution = -1
+                for x in range(0, len(lookup_dist) - 1):
+                    if lookup_dist[x + 1] <= self.calculate_range_with_tag() < lookup_dist[x]:
+                        m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                        b = lookup_angle[x] - (m * lookup_dist[x])
+                        solution = (m * self.calculate_range_with_tag()) + b
+                return solution
+            else:
+                return -1
+        else:
+            return -1
 
+    # TODO Remove the code below, it's been deprecated.
     def aim_and_fire(self, drive: DriveSubsystem,
                      shooter: ShooterSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem) -> None:
         """Once aimed, shoot."""
-        if self.has_targets():
+        if self.has_targets() and self.range_to_angle() != -1:
             shooter.set_angle(self.range_to_angle())
             shooter.spin_up(VisionConstants.shooter_default_speed)  # TODO check if this explodes the SPARK MAX.
             self.rotate_to_target(drive, 0, 0)  # Rotate in place.

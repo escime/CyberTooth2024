@@ -4,7 +4,7 @@ numerical or boolean constants. Don't use this for any other purpose!
 """
 
 import math
-from wpimath.geometry import Translation2d
+from wpimath.geometry import Translation2d, Pose2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
 
@@ -94,16 +94,17 @@ class TrapperConstants:
     climb_limit = 60
     trap_speed = 0.5
     amp_speed = 1
-    climber_preset = 0
-    climber_preset_2 = 0
+    climber_preset = 120
+    climber_preset_2 = 120
     sport_reduction = 1/16
     sprocket_reduction = 10/46
     neo_resolution = 1/42
     positionConversion = 360 * neo_resolution * sprocket_reduction * sport_reduction
+    current_threshold = 30
 
 
 class IntakeConstants:
-    current_limit = 35
+    current_limit = 40
     motor_id = 30
     follower_id = 31
     intake_speed = 1
@@ -118,19 +119,25 @@ class VisionConstants:
     rangekP = 0.05
     turn_to_target_error_max = 2  # In degrees.
     min_command = 0.01  # Should be in volts, will require tuning.
-    shooter_default_speed = 3000
+    shooter_default_speed = 4500
 
 
 class ShooterConstants:
-    master_id = 33
-    follower_id = 34
+    top_id = 34
+    bottom_id = 33
     current_limit = 38
-    shooter_kFF = 0  # estimated 0.19 Vs/m
+    shooter_kFF = 0.000185
     shooter_kP = 0
     shooter_kD = 0
-    angle_kP = 0
-    feeder_speed = 0
+    angle_kP = 4
+    feeder_speed = 0.5
     threshold = 50
-    threshold_ang = 1
+    threshold_ang = 0.05
     threshold_fired = 30
     trim = 0
+
+
+class GlobalVariables:
+    # This really shouldn't go here but I'm trying to fix something really bad
+    current_vision = Pose2d(0, 0, 0)
+    timestamp = 0

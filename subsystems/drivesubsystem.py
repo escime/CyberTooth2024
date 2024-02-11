@@ -6,7 +6,7 @@ from wpimath.estimator import SwerveDrive4PoseEstimator
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from wpimath.controller import PIDController
 from subsystems.swervemodule import SwerveModule
-from constants import DriveConstants, ModuleConstants, AutoConstants
+from constants import DriveConstants, ModuleConstants, AutoConstants, GlobalVariables
 from wpilib import SmartDashboard, Field2d, Timer, DriverStation
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.config import HolonomicPathFollowerConfig, ReplanningConfig, PIDConstants
@@ -104,6 +104,7 @@ class DriveSubsystem(commands2.SubsystemBase):
     timer = Timer()
     timer.start()
     last_time = 0
+    period_update_time = timer.get()
     current_time = timer.get()
 
     def get_chassis_speeds(self):
@@ -234,10 +235,17 @@ class DriveSubsystem(commands2.SubsystemBase):
             self.blue_alliance = True
         else:
             self.blue_alliance = False
-        if -5 < self.gyro.getRoll() < 5:
-            self.balanced = True
-        else:
-            self.balanced = False
+
+        if self.timer.get() - 0.5 > self.period_update_time:
+            if -5 < self.gyro.getRoll() < 5:
+                self.balanced = True
+            else:
+                self.balanced = False
+            # TODO Check if this whole "global variables" methodology works at all. Kinda doubt it ngl.
+            if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
+                    self.get_pose().y - GlobalVariables.current_vision.y < 1:
+                self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
+            self.period_update_time = self.timer.get()
 
         SmartDashboard.putData("Field", self.m_field)
         SmartDashboard.putNumber("Robot Heading", self.get_heading())

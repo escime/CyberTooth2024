@@ -63,34 +63,24 @@ class LEDs(commands2.SubsystemBase):
                 self.rainbow_pattern.append(AddressableLED.LEDData(255, 0, 238))
                 self.rainbow_pattern.append(AddressableLED.LEDData(255, 0, 238))
         elif self.style == "GRB":
-            for i in range(0, int(self.length / 15)):
-                self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 0))
-                self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 0))
+            for i in range(0, int(self.length / 5)):
                 self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 0))
                 self.rainbow_pattern.append(AddressableLED.LEDData(213, 255, 0))
-                self.rainbow_pattern.append(AddressableLED.LEDData(213, 255, 0))
-                self.rainbow_pattern.append(AddressableLED.LEDData(213, 255, 0))
-                self.rainbow_pattern.append(AddressableLED.LEDData(255, 0, 0))
-                self.rainbow_pattern.append(AddressableLED.LEDData(255, 0, 0))
                 self.rainbow_pattern.append(AddressableLED.LEDData(255, 0, 0))
                 self.rainbow_pattern.append(AddressableLED.LEDData(47, 0, 255))
-                self.rainbow_pattern.append(AddressableLED.LEDData(47, 0, 255))
-                self.rainbow_pattern.append(AddressableLED.LEDData(47, 0, 255))
-                self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 238))
-                self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 238))
                 self.rainbow_pattern.append(AddressableLED.LEDData(0, 255, 238))
 
         # Setup purple chase pattern default
         if self.style == "RGB":
-            self.purple_pattern = [AddressableLED.LEDData(149, 50, 168)] * 10
+            self.purple_pattern = [AddressableLED.LEDData(149, 50, 168)] * 5
         elif self.style == "GRB":
-            self.purple_pattern = [AddressableLED.LEDData(50, 149, 168)] * 10
-        for i in range(0, self.length - 10):
+            self.purple_pattern = [AddressableLED.LEDData(50, 149, 168)] * 5
+        for i in range(0, self.length - 5):
             self.purple_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
         # Setup shoot animation default
-        self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 10
-        for i in range(0, self.length - 10):
+        self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
+        for i in range(0, self.length - 5):
             self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
         # Setup amplification timer default.
@@ -266,9 +256,11 @@ class LEDs(commands2.SubsystemBase):
         self.current_state = "shooting"
         if self.shooting_counter >= self.length:
             self.shooting_counter = 0
+            self.m_ledBuffer = [AddressableLED.LEDData(0, 0, 0)] * self.length
+            self.set_chain()
             self.shooting = False
-            self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 10
-            for i in range(0, self.length - 10):
+            self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
+            for i in range(0, self.length - 5):
                 self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
     def amp_timer(self) -> None:

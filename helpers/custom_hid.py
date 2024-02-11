@@ -173,6 +173,14 @@ class CustomHID:
         else:
             return False
 
+    def get_axis_squared(self, axis: str, deadband: float) -> float:
+        stored = self.get_axis(axis, deadband)
+        if stored < 0:
+            scalar = -1
+        else:
+            scalar = 1
+        return stored * stored * scalar
+
     def get_d_pad(self) -> str:
         value = "Z"
         if self.controller.getPOV() == 0:

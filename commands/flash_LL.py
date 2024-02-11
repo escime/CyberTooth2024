@@ -26,5 +26,8 @@ class FlashLL(commands2.Command):
         else:
             return False
 
+    def end(self, interrupted: bool):
+        self.viz.flash_leds(False)
+
     def runsWhenDisabled(self) -> bool:
-        return False
+        return True

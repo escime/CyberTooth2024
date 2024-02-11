@@ -13,6 +13,7 @@ from subsystems.trappersubsystem import TrapperSubsystem
 from wpilib import SmartDashboard, SendableChooser, DriverStation, DataLogManager
 from commands.default_leds import DefaultLEDs
 from commands.debug_mode import DebugMode
+from commands.shoot_leds import ShootLEDs
 from commands.return_wheels import ReturnWheels
 from commands.turn import Turn
 from commands.amp_leds import AmpLEDs
@@ -25,7 +26,7 @@ from commands.drive_to_note import DriveToNote
 from commands.intake import Intake
 from commands.eject import Eject
 from commands.ready_amp import ReadyAMP
-from commands.ready_amp_no_shooter import ReadyAMPNoShooter
+from commands.switch_channel import SwitchPDHChannel
 from commands.toggle_odo import ToggleOdo
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
@@ -48,10 +49,10 @@ class RobotContainer:
         # Instantiate subsystems using their constructors if tuning mode is disabled.
         if not tuning_setter:
             self.robot_drive = DriveSubsystem()
-            self.leds = LEDs(0, 19, 1, 0.03, "GRB")
-            self.vision_system = VisionSubsystem(self.robot_drive)
+            self.leds = LEDs(0, 20, 1, 0.03, "GRB")
+            self.vision_system = VisionSubsystem()
             self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
-            # self.shooter = ShooterSubsystem()
+            self.shooter = ShooterSubsystem()
             self.intake = IntakeSubsystem()
             self.trapper = TrapperSubsystem()
 
@@ -65,9 +66,9 @@ class RobotContainer:
             # Set the default drive command.
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
                 lambda: self.robot_drive.drive_2ok(
-                    self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                    self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                    self.driver_controller_raw.get_axis("RX", 0.06) *
+                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                    self.driver_controller_raw.get_axis_squared("RX", 0.06) *
                     DriveConstants.kMaxAngularSpeedTeleop,
                     True),
                 self.robot_drive
@@ -125,41 +126,42 @@ class RobotContainer:
         # Hold for Slow Mode, variable based on depth of Trigger.
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.05)).whileTrue(
             commands2.cmd.run(lambda: self.robot_drive.drive_slow(
-                self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("RX", 0.06) * DriveConstants.kMaxAngularSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("RX", 0.06) * DriveConstants.kMaxAngularSpeedTeleop,
                 True,
                 self.driver_controller_raw.refine_trigger("R", 0.05, 0.9, 0.1)), self.robot_drive))
 
         # Press any direction on the D-pad to enable PID snap to that equivalent angle based on field orientation
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
                 315
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
                 45
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("N")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
                 180
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
-                self.driver_controller_raw.get_axis("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeedTeleop,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeedTeleop,
                 0
             ), self.robot_drive))
 
         # Reset robot pose to center of the field.
         button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
-            commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(), self.vision_system, self.robot_drive))
+            commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(self.robot_drive), self.vision_system,
+                              self.robot_drive))
 
         # Emergency intake manual controls.
         button.Trigger(lambda: self.operator_controller_raw.get_button("RB")).whileTrue(
@@ -174,20 +176,26 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.intake.intake(0), self.intake))
 
         # Hold to manually shoot a NOTE.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("LB")).whileTrue(
-        #     commands2.SequentialCommandGroup(
-        #         ReadyShooter(self.shooter, "subwoofer"),
-        #         Shoot(self.shooter, self.intake, self.trapper)))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("LB")).whileTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "subwoofer"),
+                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
+
+        # Hold for podium shot (temporary lol)
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "podium"),
+                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
 
         # Hold to autonomously shoot a NOTE.
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
         #     ShootVision(self.shooter, self.vision_system, self.robot_drive, self.leds, self.intake, self.trapper))
 
         # Press to prepare to place a NOTE in the AMP.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-        #     ReadyAMP(self.trapper, self.shooter))
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            ReadyAMPNoShooter(self.trapper))
+            ReadyAMP(self.trapper, self.shooter))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
+        #     ReadyAMPNoShooter(self.trapper))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
         button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
@@ -204,10 +212,8 @@ class RobotContainer:
         button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(AmpLEDs(self.leds))
 
         # When the robot is enabled, turn on the Time-On Meter.
-        button.Trigger(lambda: DriverStation.isEnabled()).onTrue(
-            commands2.cmd.runOnce(lambda: self.utilsys.toggle_channel(True)))
-        button.Trigger(lambda: DriverStation.isDisabled()).onTrue(
-            commands2.cmd.runOnce(lambda: self.utilsys.toggle_channel(False)))
+        button.Trigger(lambda: DriverStation.isEnabled()).onTrue(SwitchPDHChannel(True, self.utilsys))
+        button.Trigger(lambda: DriverStation.isEnabled()).onFalse(SwitchPDHChannel(False, self.utilsys))
 
         # Manually control the arm.
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).whileTrue(
@@ -218,7 +224,7 @@ class RobotContainer:
 
         # Manually control the climber.
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("LY", 0.15)).whileTrue(
-            commands2.cmd.run(lambda: self.trapper.run_climb(self.operator_controller_raw.get_axis("LY", 0.15)),
+            commands2.cmd.run(lambda: self.trapper.run_climb(self.operator_controller_raw.get_axis("LY", 0.15) * -1),
                               self.trapper))
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("LY", 0.05)).onFalse(
             commands2.cmd.run(lambda: self.trapper.run_climb(0), self.trapper))
@@ -234,37 +240,45 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.trapper.manual_trap(0), self.trapper))
 
         # Adjust shooter trim.
-        # button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("N")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.shooter.increment_trim(5), self.shooter))
-        # button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("S")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.shooter.increment_trim(-5), self.shooter))
+        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("N")).onTrue(
+            commands2.cmd.runOnce(lambda: self.shooter.increment_trim(0.05), self.shooter))
+        button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("S")).onTrue(
+            commands2.cmd.runOnce(lambda: self.shooter.increment_trim(-0.05), self.shooter))
 
         # Hold to intake a NOTE.
         button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1)).whileTrue(
             Intake(self.intake, self.trapper))
 
         # Hold to spit out a NOTE.
-        # button.Trigger(lambda: self.operator_controller_raw.get_trigger("L", 0.1)).whileTrue(
-        #     Eject(self.intake, self.trapper, self.shooter))
+        button.Trigger(lambda: self.operator_controller_raw.get_trigger("L", 0.1)).whileTrue(
+            Eject(self.intake, self.trapper, self.shooter))
 
         # Press to preset for climb approach.
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("B")).onTrue(
-        #     commands2.SequentialCommandGroup(
-        #         ReadyShooter(self.shooter, "stow"),
-        #         commands2.cmd.runOnce(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
+        button.Trigger(lambda: self.operator_controller_raw.get_button("B")).onTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "stow"),
+                commands2.cmd.run(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
 
         # Press to preset for climbing.
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.trapper.set_climb_stage_2(), self.trapper))
+        button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
+            commands2.cmd.run(lambda: self.trapper.set_climb_stage_2(), self.trapper))
 
         # If climbing, set the leds to rainbow!
-        # button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
-        #     commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+        button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
+            commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
 
         # Enable odo in auto. Maybe this works as planned? One can only hope NT4 does its job.
         button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(ToggleOdo(self.vision_system))
         button.Trigger(lambda: DriverStation.isAutonomous() and self.vision_system.vision_odo).onFalse(
             ToggleOdo(self.vision_system))
+
+        # Temporary controls setup for shooter tuning.
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onTrue(
+        #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(True), self.shooter))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onFalse(
+        #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(False), self.shooter))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
+            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow")))
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
@@ -284,13 +298,19 @@ class RobotContainer:
 
     def registerCommands(self):
         NamedCommands.registerCommand("return_wheels", ReturnWheels(self.robot_drive))
-        # NamedCommands.registerCommand("drive_to_note", DriveToNote(self.robot_drive, self.intake,
-        #                                                            self.vision_system, self.trapper, self.leds))
+        NamedCommands.registerCommand("ready_shooter", ReadyShooter(self.shooter, "subwoofer"))
+        NamedCommands.registerCommand("intake", Intake(self.intake, self.trapper))
+        NamedCommands.registerCommand("drive_to_note", DriveToNote(self.robot_drive, self.intake,
+                                                                   self.vision_system, self.trapper, self.leds))
         NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds))
-        # NamedCommands.registerCommand("shoot_vision", ShootVision(self.shooter, self.vision_system, self.robot_drive,
-        #                                                           self.leds, self.intake, self.trapper))
-        # NamedCommands.registerCommand("ready_shooter", ReadyShooter(self.shooter, "subwoofer"))
-        # NamedCommands.registerCommand("shoot", Shoot(self.shooter, self.intake, self.trapper))
+        NamedCommands.registerCommand("shoot_vision", commands2.SequentialCommandGroup(
+            ShootVision(self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
+            commands2.ParallelDeadlineGroup(
+                Shoot("readied", False, self.shooter, self.intake, self.trapper),
+                ShootLEDs(self.leds, "fast"))))
+        NamedCommands.registerCommand("shoot", commands2.ParallelDeadlineGroup(
+                Shoot("readied", False, self.shooter, self.intake, self.trapper),
+                ShootLEDs(self.leds, "fast")))
         NamedCommands.registerCommand("turn_north", Turn(self.robot_drive, 0))
         NamedCommands.registerCommand("rainbow_leds", commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
         NamedCommands.registerCommand("flash_green",

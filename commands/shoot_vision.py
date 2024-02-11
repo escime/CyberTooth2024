@@ -2,52 +2,56 @@ import commands2
 from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
-from subsystems.ledsubsystem import LEDs
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
+from subsystems.ledsubsystem import LEDs
+from commands.shoot import Shoot
+from commands.shoot_leds import ShootLEDs
+from constants import VisionConstants
 from wpilib import Timer
 
 
 class ShootVision(commands2.Command):
     def __init__(self, shooter: ShooterSubsystem, vision: VisionSubsystem,
-                 drive: DriveSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem):
+                 drive: DriveSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem, leds: LEDs):
         super().__init__()
         self.shooter = shooter
         self.vision = vision
         self.drive = drive
-        self.leds = leds
         self.intake = intake
         self.trapper = trapper
+        self.leds = leds
         self.addRequirements(shooter)
-        self.addRequirements(vision)
+        # self.addRequirements(vision)
         self.addRequirements(drive)
-        self.addRequirements(leds)
         self.addRequirements(intake)
         self.addRequirements(trapper)
         self.timer = Timer()
-        self.start_time = 10000000
-        self.overrun_time = 0
+        self.start_time = 1000
+        self.overrun_time = self.timer.get()
 
     def initialize(self):
         self.timer.start()
         self.vision.target_locked = False
         self.vision.vision_odo = False
         self.overrun_time = self.timer.get()
+        self.shooter.spin_up(VisionConstants.shooter_default_speed)
 
     def execute(self) -> None:
-        self.vision.aim_and_fire(self.drive, self.shooter, self.leds, self.intake, self.trapper)
-        if self.vision.target_locked:
-            self.start_time = self.timer.get()
+        if self.vision.has_targets() and self.vision.range_to_angle() != -1:
+            self.shooter.set_angle(self.vision.range_to_angle())
+            self.vision.rotate_to_target(self.drive, 0, 0)
+            if self.shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.vision.tx < \
+                    VisionConstants.turn_to_target_error_max:
+                self.vision.target_locked = True
 
     def isFinished(self) -> bool:
-        # TODO replace with a different condition later.
-        if self.timer.get() - 1 > self.start_time or self.timer.get() - 5 > self.overrun_time:
+        if self.vision.target_locked or self.timer.get() - 3 > self.overrun_time:
             return True
         else:
             return False
 
     def end(self, interrupted: bool):
-        self.shooter.set_known_setpoint("readied")
-        self.intake.intake(0)
-        self.trapper.manual_trap(0)
+        # ShootLEDs(self.leds, "fast")
+        # Shoot("readied", False, self.shooter, self.intake, self.trapper)
         print("ShootVision complete.")

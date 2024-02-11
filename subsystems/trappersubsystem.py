@@ -6,7 +6,7 @@ from wpilib import DigitalInput, SmartDashboard, Mechanism2d
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 0, "trap": 0, "amp": 13.5, "stow": 0}
+    setpoints = {"stage": 10, "trap": 18, "amp": 10, "stow": 0}
 
     def __init__(self) -> None:
         super().__init__()
@@ -15,6 +15,7 @@ class TrapperSubsystem(commands2.Subsystem):
         self.arm = CANSparkMax(36, CANSparkMax.MotorType.kBrushless)
         self.arm.setInverted(True)
         self.climb = CANSparkMax(37, CANSparkMax.MotorType.kBrushless)
+        self.climb.setInverted(True)
 
         # Set motor idle behavior.
         self.trap.setIdleMode(CANSparkMax.IdleMode.kBrake)
@@ -28,15 +29,16 @@ class TrapperSubsystem(commands2.Subsystem):
         # Configure arm PID.
         self.arm_pid = self.arm.getPIDController()
         self.arm_pid.setP(TrapperConstants.kP)
-        self.arm_pid.setOutputRange(-0.5, 0.5)  # TODO tune this later
+        self.arm_pid.setOutputRange(-1, 1)  # TODO tune this later
 
         # Burn all settings to flash memory on the SPARK Maxes.
         self.trap.burnFlash()
         self.arm.burnFlash()
         self.climb.burnFlash()
 
-        # Setup NOTE detection sensor.
-        self.sensor = DigitalInput(0)
+        # Setup NOTE detection sensors.
+        self.sensor_bottom = DigitalInput(0)
+        self.sensor_top = DigitalInput(1)
 
         # Setup encoders.
         self.arm_encoder = self.arm.getEncoder()
@@ -51,7 +53,7 @@ class TrapperSubsystem(commands2.Subsystem):
         # Tell robot it's not climbing
         self.is_climbing = False
 
-        self.note_acquisition_buffer = [False] * 35
+        self.note_acquisition_buffer = [False] * 15
 
         # self.mech = Mechanism2d(6, 6)
         # self.mech_root = self.mech.getRoot("core", 3, 3)
@@ -132,11 +134,13 @@ class TrapperSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
         # self.mech_arm.setAngle(self.arm_encoder.getPosition())
         # SmartDashboard.putData("Arm Mech2d", self.mech)
-        if self.sensor.get():
-            self.note_acquisition_buffer[0] = False
-        else:
+        # if not self.sensor.get() and self.trap.getOutputCurrent() >= TrapperConstants.current_threshold:
+        if not self.sensor_bottom.get() and not self.sensor_top.get():
             self.note_acquisition_buffer[0] = True
+        else:
+            self.note_acquisition_buffer[0] = False
         self.note_acquisition_buffer = self.note_acquisition_buffer[1:] + self.note_acquisition_buffer[:1]
         SmartDashboard.putBoolean("Note Acquired?", self.get_note_acquired())
         SmartDashboard.putBooleanArray("Note Acquisition Buffer", self.note_acquisition_buffer)
         SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
+        SmartDashboard.putNumber("Trapper Current Draw", self.trap.getOutputCurrent())
