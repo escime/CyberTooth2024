@@ -2,7 +2,7 @@ import commands2
 from subsystems.ledsubsystem import LEDs
 
 
-class ShootLEDs(commands2.CommandBase):
+class ShootLEDs(commands2.Command):
     def __init__(self, leds: LEDs, speed: str):
         super().__init__()
         self.leds = leds

@@ -20,7 +20,6 @@ class LEDs(commands2.SubsystemBase):
     dominant_color = [255, 0, 0]
     flash_rate = 2
     shooting = False
-    shooting_counter = 0
     amp_timer_on = False
     amp_index = 0
 
@@ -79,6 +78,10 @@ class LEDs(commands2.SubsystemBase):
             self.purple_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
         # Setup shoot animation default
+        # self.shoot_pattern = [AddressableLED.LEDData(0, 0, 0)] * (self.length - 5)
+        # for i in range(0, 5):
+        #     self.shoot_pattern.append(AddressableLED.LEDData(142, 254, 15))
+        self.shooting_counter = 0
         self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
         for i in range(0, self.length - 5):
             self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
@@ -242,15 +245,15 @@ class LEDs(commands2.SubsystemBase):
     def shoot_animator(self, speed: str):
         self.shooting = True
         if speed == "fast":
-            index = 4
-        elif speed == "fastest":
-            index = 6
-        else:
             index = 2
+        elif speed == "fastest":
+            index = 4
+        else:
+            index = 1
         if self.timer.get() - 0.02 > self.record_time:
             self.shooting_counter += index
             self.m_ledBuffer = self.shoot_pattern
-            self.shoot_pattern = self.shoot_pattern[index:] + self.shoot_pattern[:index]
+            self.shoot_pattern = self.shoot_pattern[self.length - index:] + self.shoot_pattern[:self.length - index]
             self.record_time = self.timer.get()
         self.set_chain()
         self.current_state = "shooting"
@@ -259,6 +262,9 @@ class LEDs(commands2.SubsystemBase):
             self.m_ledBuffer = [AddressableLED.LEDData(0, 0, 0)] * self.length
             self.set_chain()
             self.shooting = False
+            # self.shoot_pattern = [AddressableLED.LEDData(0, 0, 0)] * (self.length - 5)
+            # for i in range(0, 5):
+            #     self.shoot_pattern.append(AddressableLED.LEDData(142, 254, 15))
             self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
             for i in range(0, self.length - 5):
                 self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))

@@ -201,9 +201,9 @@ class VisionSubsystem(commands2.Subsystem):
     def calculate_range_with_tag(self):
         """Range from target (for shooter)."""
         if self.has_targets():
-            if self.tag_id in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]:
+            if int(self.tag_id) in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]:
                 angle_to_goal = (VisionConstants.rotation_from_horizontal + self.ty) * math.pi / 180
-                target_range = (VisionConstants.tag_heights[self.tag_id - 1] -
+                target_range = (VisionConstants.tag_heights[int(self.tag_id) - 1] -
                                 VisionConstants.lens_height) / math.atan(angle_to_goal)
             else:
                 target_range = -1
@@ -256,8 +256,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""
-        lookup_dist = [3.56, 0.80, 0.20]
-        lookup_angle = [31, 64.5, 125]
+        lookup_dist = [60, 56, 50]
+        lookup_angle = [0.49, 0.48, 0.44]
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1
@@ -278,7 +278,7 @@ class VisionSubsystem(commands2.Subsystem):
         """Once aimed, shoot."""
         if self.has_targets() and self.range_to_angle() != -1:
             shooter.set_angle(self.range_to_angle())
-            shooter.spin_up(VisionConstants.shooter_default_speed)  # TODO check if this explodes the SPARK MAX.
+            shooter.spin_up(VisionConstants.shooter_default_speed)
             self.rotate_to_target(drive, 0, 0)  # Rotate in place.
             if shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.tx < \
                     VisionConstants.turn_to_target_error_max:

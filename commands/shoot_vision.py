@@ -35,11 +35,11 @@ class ShootVision(commands2.Command):
         self.vision.target_locked = False
         self.vision.vision_odo = False
         self.overrun_time = self.timer.get()
-        self.shooter.spin_up(VisionConstants.shooter_default_speed)
 
     def execute(self) -> None:
         if self.vision.has_targets() and self.vision.range_to_angle() != -1:
             self.shooter.set_angle(self.vision.range_to_angle())
+            self.shooter.spin_up(VisionConstants.shooter_default_speed)
             self.vision.rotate_to_target(self.drive, 0, 0)
             if self.shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.vision.tx < \
                     VisionConstants.turn_to_target_error_max:

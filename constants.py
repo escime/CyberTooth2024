@@ -20,9 +20,9 @@ class DriveConstants:
     d_position_conversion_factor = wheel_circumference / drive_gear_ratio
     d_velocity_conversion_factor = d_position_conversion_factor / 60  # Conversion from rot/min to m/s
     kMaxSpeed = 5.06  # Set max speed in m/s 10
-    kMaxSpeedTeleop = kMaxSpeed * 1.75
-    kMaxAngularSpeed = 11  # Set max rotation speed rot/s 20
-    kMaxAngularSpeedTeleop = kMaxAngularSpeed * 1.75
+    # kMaxSpeedTeleop = kMaxSpeed * 1.75
+    kMaxAngularSpeed = 7  # Set max rotation speed rot/s 20
+    # kMaxAngularSpeedTeleop = kMaxAngularSpeed * 1.75
     kGyroReversed = False
 
     m_FL_location = Translation2d(0.52705 / 2, 0.52705 / 2)
@@ -33,8 +33,8 @@ class DriveConstants:
 
     snap_controller_PID = [0, 0, 0]
     drive_controller_PID = [2, 0, 0]
-    azimuth_controller_PID = [2, 0, 0]
-    drive_controller_FF = [0.20 / 12, 2.35 / 12, 0.44 / 12]  # n/a, 2.35, 0.44
+    azimuth_controller_PID = [1.8, 0, 0]
+    drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
 
     closed_loop_ramp = 0.0
     open_loop_ramp = 0.25
@@ -43,16 +43,16 @@ class DriveConstants:
 
     balance_PID = [0.01, 0, 0]
 
-    slew_rate_drive = 40
+    slew_rate_drive = 50
     slew_rate_turn = 0
 
 
 class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.5
-    kMaxAccelerationMetersPerSecondSquared = 2
+    kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 5  # Previously 12
-    kPThetaController = 7  # Previously 10
+    kPXController = 2  # Previously 12
+    kPThetaController = 3  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond
@@ -89,13 +89,13 @@ class ModuleConstants:
 
 
 class TrapperConstants:
-    kP = 0.05
+    kP = 1
     arm_limit = 60
     climb_limit = 60
     trap_speed = 0.5
-    amp_speed = 1
-    climber_preset = 120
-    climber_preset_2 = 120
+    amp_speed = 0.6
+    climber_preset = 100
+    climber_preset_2 = 100
     sport_reduction = 1/16
     sprocket_reduction = 10/46
     neo_resolution = 1/42
@@ -117,7 +117,7 @@ class VisionConstants:
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
     turnkP = 0.01  # Will require tuning.
     rangekP = 0.05
-    turn_to_target_error_max = 2  # In degrees.
+    turn_to_target_error_max = 3  # In degrees.
     min_command = 0.01  # Should be in volts, will require tuning.
     shooter_default_speed = 4500
 
@@ -132,7 +132,7 @@ class ShooterConstants:
     angle_kP = 4
     feeder_speed = 0.5
     threshold = 50
-    threshold_ang = 0.05
+    threshold_ang = 0.01
     threshold_fired = 30
     trim = 0
 

@@ -6,7 +6,7 @@ from wpilib import DigitalInput, SmartDashboard, Mechanism2d
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 10, "trap": 18, "amp": 10, "stow": 0}
+    setpoints = {"stage": 7.9, "trap": 20.27, "amp": 9, "stow": 0}
 
     def __init__(self) -> None:
         super().__init__()
@@ -29,7 +29,7 @@ class TrapperSubsystem(commands2.Subsystem):
         # Configure arm PID.
         self.arm_pid = self.arm.getPIDController()
         self.arm_pid.setP(TrapperConstants.kP)
-        self.arm_pid.setOutputRange(-1, 1)  # TODO tune this later
+        self.arm_pid.setOutputRange(-1, 1)
 
         # Burn all settings to flash memory on the SPARK Maxes.
         self.trap.burnFlash()
@@ -100,7 +100,12 @@ class TrapperSubsystem(commands2.Subsystem):
         self.climb.set(speed)
 
     def manual_arm(self, speed: float) -> None:
-        self.arm.set(speed)
+        if self.arm_encoder.getPosition() > self.setpoints["trap"] and speed > 0:
+            self.arm.set(0)
+        elif self.arm_encoder.getPosition() < 0 and speed < 0:
+            self.arm.set(0)
+        else:
+            self.arm.set(speed)
         self.arm_setpoint = "manual"
 
     def manual_arm_off(self) -> None:
@@ -108,12 +113,18 @@ class TrapperSubsystem(commands2.Subsystem):
         self.arm_setpoint = "manual_off"
         self.arm_pid.setReference(self.arm_encoder.getPosition(), CANSparkMax.ControlType.kPosition)
 
+    def check_arm_position(self):
+        if abs(self.arm_encoder.getPosition() - self.setpoints[self.arm_setpoint]) < 0.2:
+            return True
+        else:
+            return False
+
     def set_climb_stage_1(self) -> None:
         """Preset the trap mechanisms for being under the stage."""
         self.is_climbing = True
         if self.arm_setpoint != "stage":
             self.set_arm("stage")
-        if self.climb_encoder.getPosition() < TrapperConstants.climber_preset:
+        if self.climb_encoder.getPosition() < TrapperConstants.climber_preset and self.check_arm_position():
             self.run_climb(1)
         else:
             self.run_climb(0)

@@ -6,8 +6,8 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 0}
-    angle_setpoints = {"stow": 0.46, "subwoofer": 0.23, "podium": 0.26, "readied": 0.3}
+    shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
+    angle_setpoints = {"stow": 0.625, "subwoofer": 0.425, "podium": 0.48, "readied": 0.5, "test": 0.48}
 
     def __init__(self) -> None:
         super().__init__()

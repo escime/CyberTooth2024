@@ -100,7 +100,6 @@ class DriveSubsystem(commands2.SubsystemBase):
     m_field = Field2d()
 
     # Start timer for 2nd order kinematics.
-    # TODO Disable this if 2ok is not being used.
     timer = Timer()
     timer.start()
     last_time = 0
