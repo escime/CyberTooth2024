@@ -181,26 +181,26 @@ class RobotContainer:
                 ReadyShooter(self.shooter, "subwoofer"),
                 Shoot("readied", True, self.shooter, self.intake, self.trapper)))
 
-        # Hold for podium shot (temporary lol)
-        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
-            commands2.SequentialCommandGroup(
-                ReadyShooter(self.shooter, "test"),
-                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
+        # Hold for test shot (temporary lol)
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
+        #     commands2.SequentialCommandGroup(
+        #         ReadyShooter(self.shooter, "test"),
+        #         Shoot("readied", True, self.shooter, self.intake, self.trapper)))
 
         # Hold to autonomously shoot a NOTE.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-        #     ShootVision(self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
-        #     commands2.ParallelDeadlineGroup(
-        #         Shoot("readied", True, self.shooter, self.intake, self.trapper),
-        #         ShootLEDs(self.leds, "slow"))))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
+            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
+            commands2.ParallelDeadlineGroup(
+                Shoot("readied", True, self.shooter, self.intake, self.trapper),
+                ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            ReadyAMP(self.trapper, self.shooter))
+            ReadyAMP(self.trapper, self.shooter, self.robot_drive))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
         button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
-            ScoreAMP(self.trapper))
+            ScoreAMP(self.trapper, self.robot_drive))
 
         # Hold to drive towards and collect a NOTE.
         # button.Trigger(lambda: self.driver_controller_raw.get_button("B")).whileTrue(
@@ -290,6 +290,98 @@ class RobotContainer:
 
         # button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(ShootLEDs(self.leds, "slow"))
 
+        # Vibrate the driver controller when targets are in view (update later to be "within vision table")
+        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
+            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(1)))
+        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
+            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
+
+    def configureTriggers1ControllerProfile(self):
+        # Reset robot pose to center of the field.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
+            commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(self.robot_drive), self.vision_system,
+                              self.robot_drive))
+
+        # Hold to manually shoot a NOTE.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("LB")).whileTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "subwoofer"),
+                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
+
+        # Hold for test shot (temporary lol)
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "test"),
+                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
+
+        # Hold to autonomously shoot a NOTE.
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
+        #     ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
+        #     commands2.ParallelDeadlineGroup(
+        #         Shoot("readied", True, self.shooter, self.intake, self.trapper),
+        #         ShootLEDs(self.leds, "slow"))))
+
+        # Press to prepare to place a NOTE in the AMP.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
+            ReadyAMP(self.trapper, self.shooter))
+
+        # Hold to score a NOTE in the AMP. Release to return to STOW.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
+            ScoreAMP(self.trapper))
+
+        # When a NOTE enters the trapper, flash all LEDs green.
+        button.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
+
+        # When the robot is enabled, turn on the Time-On Meter.
+        button.Trigger(lambda: DriverStation.isEnabled()).onTrue(SwitchPDHChannel(True, self.utilsys))
+        button.Trigger(lambda: DriverStation.isEnabled()).onFalse(SwitchPDHChannel(False, self.utilsys))
+
+        # Manually control the climber.
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).whileTrue(
+            commands2.cmd.run(lambda: self.trapper.run_climb(1), self.trapper))
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onFalse(
+            commands2.cmd.run(lambda: self.trapper.run_climb(0), self.trapper))
+
+        # Manually control the trap intake.
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).whileTrue(
+            commands2.cmd.run(lambda: self.trapper.manual_trap(0.5), self.trapper))
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).whileTrue(
+            commands2.cmd.run(lambda: self.trapper.manual_trap(-0.5), self.trapper))
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).onFalse(
+            commands2.cmd.run(lambda: self.trapper.manual_trap(0), self.trapper))
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).onFalse(
+            commands2.cmd.run(lambda: self.trapper.manual_trap(0), self.trapper))
+
+        # Hold to intake a NOTE.
+        button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.1)).whileTrue(
+            Intake(self.intake, self.trapper))
+
+        # Hold to spit out a NOTE.
+        button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
+            Eject(self.intake, self.trapper, self.shooter))
+
+        # Press to preset for climb approach.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
+            commands2.SequentialCommandGroup(
+                ReadyShooter(self.shooter, "stow"),
+                commands2.cmd.run(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
+
+        # Press to preset for climbing.
+        button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
+            commands2.ParallelCommandGroup(
+                commands2.cmd.run(lambda: self.trapper.set_climb_stage_2(), self.trapper),
+                commands2.cmd.run(lambda: self.robot_drive.drive_2ok(0.05 * DriveConstants.kMaxSpeed, 0, 0, False),
+                                  self.robot_drive)))
+
+        # If climbing, set the leds to rainbow!
+        button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
+            commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+
+        # Enable odo in auto. Maybe this works as planned?
+        button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(ToggleOdo(self.vision_system))
+        button.Trigger(lambda: DriverStation.isAutonomous() and self.vision_system.vision_odo).onFalse(
+            ToggleOdo(self.vision_system))
+
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
         Returns the command to run in autonomous
@@ -314,7 +406,8 @@ class RobotContainer:
                                                                    self.vision_system, self.trapper, self.leds))
         NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds))
         NamedCommands.registerCommand("shoot_vision", commands2.SequentialCommandGroup(
-            ShootVision(self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
+            ShootVision(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
+                        self.trapper, self.leds),
             commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper),
                 ShootLEDs(self.leds, "slow"))))

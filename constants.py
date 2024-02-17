@@ -94,8 +94,8 @@ class TrapperConstants:
     climb_limit = 60
     trap_speed = 0.5
     amp_speed = 0.6
-    climber_preset = 100
-    climber_preset_2 = 100
+    climber_preset = 188
+    climber_preset_2 = 188
     sport_reduction = 1/16
     sprocket_reduction = 10/46
     neo_resolution = 1/42
@@ -104,7 +104,7 @@ class TrapperConstants:
 
 
 class IntakeConstants:
-    current_limit = 40
+    current_limit = 60
     motor_id = 30
     follower_id = 31
     intake_speed = 1
@@ -115,10 +115,10 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.01  # Will require tuning.
+    turnkP = 0.05  # Will require tuning.
     rangekP = 0.05
-    turn_to_target_error_max = 3  # In degrees.
-    min_command = 0.01  # Should be in volts, will require tuning.
+    turn_to_target_error_max = 2  # In degrees.
+    min_command = 0.05  # Should be in volts, will require tuning.
     shooter_default_speed = 4500
 
 
@@ -131,7 +131,7 @@ class ShooterConstants:
     shooter_kD = 0
     angle_kP = 4
     feeder_speed = 0.5
-    threshold = 50
+    threshold = 500
     threshold_ang = 0.01
     threshold_fired = 30
     trim = 0

@@ -12,9 +12,10 @@ from wpilib import Timer
 
 
 class ShootVision(commands2.Command):
-    def __init__(self, shooter: ShooterSubsystem, vision: VisionSubsystem,
+    def __init__(self, bypass_timer: bool, shooter: ShooterSubsystem, vision: VisionSubsystem,
                  drive: DriveSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem, leds: LEDs):
         super().__init__()
+        self.bypass_timer = bypass_timer
         self.shooter = shooter
         self.vision = vision
         self.drive = drive
@@ -29,29 +30,36 @@ class ShootVision(commands2.Command):
         self.timer = Timer()
         self.start_time = 1000
         self.overrun_time = self.timer.get()
+        self.target_locked = False
 
     def initialize(self):
         self.timer.start()
-        self.vision.target_locked = False
         self.vision.vision_odo = False
         self.overrun_time = self.timer.get()
+        self.target_locked = False
 
     def execute(self) -> None:
         if self.vision.has_targets() and self.vision.range_to_angle() != -1:
-            self.shooter.set_angle(self.vision.range_to_angle())
-            self.shooter.spin_up(VisionConstants.shooter_default_speed)
+            self.shooter.set_unknown_setpoint(self.vision.range_to_angle(), VisionConstants.shooter_default_speed)
             self.vision.rotate_to_target(self.drive, 0, 0)
             if self.shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.vision.tx < \
                     VisionConstants.turn_to_target_error_max:
-                self.vision.target_locked = True
+                self.target_locked = True
 
     def isFinished(self) -> bool:
-        if self.vision.target_locked or self.timer.get() - 3 > self.overrun_time:
-            return True
+        if not self.bypass_timer:
+            if self.target_locked or self.timer.get() - 3 > self.overrun_time:
+                return True
+            else:
+                return False
         else:
-            return False
+            if self.target_locked:
+                return True
+            else:
+                return False
 
     def end(self, interrupted: bool):
         # ShootLEDs(self.leds, "fast")
         # Shoot("readied", False, self.shooter, self.intake, self.trapper)
+        self.drive.drive_2ok(0, 0, 0, False)
         print("ShootVision complete.")

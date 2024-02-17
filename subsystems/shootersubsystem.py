@@ -7,7 +7,7 @@ from wpilib import SmartDashboard
 class ShooterSubsystem(commands2.Subsystem):
 
     shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
-    angle_setpoints = {"stow": 0.625, "subwoofer": 0.425, "podium": 0.48, "readied": 0.5, "test": 0.48}
+    angle_setpoints = {"stow": 0.625, "subwoofer": 0.44, "podium": 0.48, "readied": 0.5, "test": 0.495}
 
     def __init__(self) -> None:
         super().__init__()
@@ -17,7 +17,6 @@ class ShooterSubsystem(commands2.Subsystem):
         self.shooter_bottom.setIdleMode(CANSparkMax.IdleMode.kCoast)
         self.shooter_top.setSmartCurrentLimit(ShooterConstants.current_limit)
         self.shooter_bottom.setSmartCurrentLimit(ShooterConstants.current_limit)
-        # self.shooter_bottom.follow(self.shooter_top, True)
         self.shooter_pid_top = self.shooter_top.getPIDController()
         self.shooter_pid_bottom = self.shooter_bottom.getPIDController()
         self.shooter_pid_top.setFF(ShooterConstants.shooter_kFF)
@@ -35,7 +34,7 @@ class ShooterSubsystem(commands2.Subsystem):
         self.angle_pid = self.angler.getPIDController()
         self.angle_pid.setFeedbackDevice(self.encoder)
         self.angle_pid.setP(ShooterConstants.angle_kP)
-        self.angle_pid.setOutputRange(-0.7, 0.7)  # TODO disable this once it's tuned.
+        self.angle_pid.setOutputRange(-0.7, 0.7)
         self.angle_pid.setPositionPIDWrappingEnabled(True)
 
         self.feeder = CANSparkMax(32, CANSparkMax.MotorType.kBrushless)
@@ -104,7 +103,7 @@ class ShooterSubsystem(commands2.Subsystem):
     def set_angle(self, angle: float) -> None:
         """Set the angle of the shooter."""
         self.angle_pid.setReference(angle, CANSparkMax.ControlType.kPosition)
-        if angle != 0:
+        if angle != self.angle_setpoints["stow"]:
             self.angle_setpoint = angle + self.trim
         else:
             self.angle_setpoint = angle
@@ -113,6 +112,11 @@ class ShooterSubsystem(commands2.Subsystem):
         """Set the shooter to a known state."""
         self.spin_up(self.shooter_setpoints[setpoint])
         self.set_angle(self.angle_setpoints[setpoint])
+
+    def set_unknown_setpoint(self, angle: float, speed: float) -> None:
+        self.spin_up(speed)
+        self.set_angle(angle)
+
 
     def get_current_spiked(self) -> bool:
         """Detect if the current has spiked in the shooter."""
@@ -135,12 +139,6 @@ class ShooterSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
         SmartDashboard.putNumber("Current Trim", self.trim)
         SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
-
-    # def update_shooter_pid(self) -> None:
-    #     self.shooter_pid_top.setFF(SmartDashboard.getNumber("Shooter FF", 0.0))
-    #     self.shooter_pid_top.setP(SmartDashboard.getNumber("Shooter KP", 0.0))
-    #     self.shooter_pid_bottom.setFF(SmartDashboard.getNumber("Shooter FF", 0.0))
-    #     self.shooter_pid_bottom.setP(SmartDashboard.getNumber("Shooter KP", 0.0))
 
     def tuning_toggler(self, on: bool) -> None:
         if on:

@@ -153,9 +153,7 @@ class VisionSubsystem(commands2.Subsystem):
             else:  # Otherwise,
                 if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
                     self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-            if self.timer.get() - 0.02 > self.record_time:
-                self.update_values_safe()  # Update all values.
-                self.record_time = self.timer.get()
+            self.update_values_safe()  # Update all values.
 
         SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
         SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
@@ -215,17 +213,19 @@ class VisionSubsystem(commands2.Subsystem):
         """Aim at target (for shooter.)"""
         if self.has_targets():
             if self.tx < -VisionConstants.turn_to_target_error_max:
-                rotate_output = self.turn_to_target_controller.calculate(0, self.tx) + VisionConstants.min_command
-                self.target_locked = False
-            elif self.tx > VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(0, self.tx) - VisionConstants.min_command
                 self.target_locked = False
+                # print("Tx too low! Output: " + str(rotate_output))
+            elif self.tx > VisionConstants.turn_to_target_error_max:
+                rotate_output = self.turn_to_target_controller.calculate(0, self.tx) + VisionConstants.min_command
+                self.target_locked = False
+                # print("Tx too high! Output: " + str(rotate_output))
             else:
                 rotate_output = 0
                 self.target_locked = True
         else:
             rotate_output = 0
-        drive.drive_2ok(x_speed, y_speed, rotate_output * DriveConstants.kMaxAngularSpeed, True)
+        drive.drive_2ok(x_speed, y_speed, rotate_output, True)
 
     def calculate_range_area(self):
         """This is intended for 'bad' ranging using area for something like closing to a game piece."""
@@ -254,10 +254,18 @@ class VisionSubsystem(commands2.Subsystem):
         else:
             drive.drive_2ok(0, 0, 0, False)
 
+    def forward_and_turn_to_target(self, drive: DriveSubsystem, speed: float) -> None:
+        """Turn towards a target and drive forward at a constant, set speed. Designed for GP pickup."""
+        if self.has_targets_f():
+            rotate_output = self.turn_to_target_controller.calculate(0, self.tx)
+            drive.drive_2ok(speed, 0, rotate_output, False)
+        else:
+            drive.drive_2ok(0, 0, 0, False)
+
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""
-        lookup_dist = [60, 56, 50]
-        lookup_angle = [0.49, 0.48, 0.44]
+        lookup_dist = [65, 60, 55.8, 50.6]
+        lookup_angle = [0.495, 0.49, 0.48, 0.465]
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1

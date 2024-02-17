@@ -82,7 +82,7 @@ class LEDs(commands2.SubsystemBase):
         # for i in range(0, 5):
         #     self.shoot_pattern.append(AddressableLED.LEDData(142, 254, 15))
         self.shooting_counter = 0
-        self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
+        self.shoot_pattern = [AddressableLED.LEDData(137, 255, 0)] * 5
         for i in range(0, self.length - 5):
             self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
@@ -156,7 +156,7 @@ class LEDs(commands2.SubsystemBase):
 
     def rainbow_shift(self):
         """Configure the LED code for a rainbow wrapping around each strip."""
-        if self.timer.get() - self.animation_delay > self.record_time:
+        if self.timer.get() - 0.06 > self.record_time:
             self.m_ledBuffer = self.rainbow_pattern
             self.rainbow_pattern = self.rainbow_pattern[1:] + self.rainbow_pattern[:1]
             self.record_time = self.timer.get()
@@ -265,7 +265,7 @@ class LEDs(commands2.SubsystemBase):
             # self.shoot_pattern = [AddressableLED.LEDData(0, 0, 0)] * (self.length - 5)
             # for i in range(0, 5):
             #     self.shoot_pattern.append(AddressableLED.LEDData(142, 254, 15))
-            self.shoot_pattern = [AddressableLED.LEDData(142, 254, 15)] * 5
+            self.shoot_pattern = [AddressableLED.LEDData(137, 255, 0)] * 5
             for i in range(0, self.length - 5):
                 self.shoot_pattern.append(AddressableLED.LEDData(0, 0, 0))
 

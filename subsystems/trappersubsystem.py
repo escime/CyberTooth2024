@@ -1,12 +1,12 @@
 import commands2
 from constants import TrapperConstants
 from rev import CANSparkMax
-from wpilib import DigitalInput, SmartDashboard, Mechanism2d
+from wpilib import DigitalInput, SmartDashboard
 
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 7.9, "trap": 20.27, "amp": 9, "stow": 0}
+    setpoints = {"stage": 8.3, "trap": 20.27, "amp": 9, "stow": 0}
 
     def __init__(self) -> None:
         super().__init__()
@@ -53,7 +53,7 @@ class TrapperSubsystem(commands2.Subsystem):
         # Tell robot it's not climbing
         self.is_climbing = False
 
-        self.note_acquisition_buffer = [False] * 15
+        self.note_acquisition_buffer = [False] * 10
 
         # self.mech = Mechanism2d(6, 6)
         # self.mech_root = self.mech.getRoot("core", 3, 3)
@@ -77,9 +77,12 @@ class TrapperSubsystem(commands2.Subsystem):
         """Advance the NOTE to the shooter."""
         self.trap.set(TrapperConstants.trap_speed)
 
-    def score_in_amp(self) -> None:
+    def score_in_amp(self, inverted: bool) -> None:
         """Score the NOTE in the AMP by running the trap intake backwards."""
-        self.trap.set(TrapperConstants.amp_speed * -1)
+        if inverted:
+            self.trap.set(TrapperConstants.amp_speed)
+        else:
+            self.trap.set(TrapperConstants.amp_speed * -1)
 
     def manual_trap(self, speed: float) -> None:
         """Manually control the speed of the trap intake."""
@@ -143,9 +146,6 @@ class TrapperSubsystem(commands2.Subsystem):
         """Any periodic routines for the trapper."""
         SmartDashboard.putNumber("Arm Position", self.arm_encoder.getPosition())
         SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
-        # self.mech_arm.setAngle(self.arm_encoder.getPosition())
-        # SmartDashboard.putData("Arm Mech2d", self.mech)
-        # if not self.sensor.get() and self.trap.getOutputCurrent() >= TrapperConstants.current_threshold:
         if not self.sensor_bottom.get() and not self.sensor_top.get():
             self.note_acquisition_buffer[0] = True
         else:
