@@ -265,7 +265,7 @@ class VisionSubsystem(commands2.Subsystem):
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""
         lookup_dist = [65, 60, 55.8, 50.6]
-        lookup_angle = [0.495, 0.49, 0.48, 0.465]
+        lookup_angle = [0.857, 0.847, 0.837, 0.822]
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1

@@ -5,8 +5,6 @@ from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from subsystems.ledsubsystem import LEDs
-from commands.shoot import Shoot
-from commands.shoot_leds import ShootLEDs
 from constants import VisionConstants
 from wpilib import Timer
 
@@ -59,7 +57,7 @@ class ShootVision(commands2.Command):
                 return False
 
     def end(self, interrupted: bool):
-        # ShootLEDs(self.leds, "fast")
-        # Shoot("readied", False, self.shooter, self.intake, self.trapper)
         self.drive.drive_2ok(0, 0, 0, False)
+        if interrupted:
+            self.shooter.set_known_setpoint("readied")
         print("ShootVision complete.")

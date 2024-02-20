@@ -137,7 +137,7 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                315
+                270
             ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
@@ -156,6 +156,18 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 0
+            ), self.robot_drive))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                45
+            ), self.robot_drive))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                315
             ), self.robot_drive))
 
         # Reset robot pose to center of the field.
@@ -195,11 +207,11 @@ class RobotContainer:
                 ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(
             ReadyAMP(self.trapper, self.shooter, self.robot_drive))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
-        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("X")).whileTrue(
             ScoreAMP(self.trapper, self.robot_drive))
 
         # Hold to drive towards and collect a NOTE.
@@ -210,14 +222,15 @@ class RobotContainer:
         button.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
 
         # Start an AMPLIFICATION timer.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(AmpLEDs(self.leds))
+        button.Trigger(lambda: self.operator_controller_raw.get_button("MENU")).onTrue(AmpLEDs(self.leds))
 
         # When the robot is enabled, turn on the Time-On Meter.
         button.Trigger(lambda: DriverStation.isEnabled()).onTrue(SwitchPDHChannel(True, self.utilsys))
         button.Trigger(lambda: DriverStation.isEnabled()).onFalse(SwitchPDHChannel(False, self.utilsys))
 
         # Manually control the arm.
-        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).whileTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1) and
+                       self.shooter.angle_setpoint == self.shooter.angle_setpoints["stow"]).whileTrue(
             commands2.cmd.run(lambda: self.trapper.manual_arm(self.operator_controller_raw.get_axis("RY", 0.1) * -1),
                               self.trapper))
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).onFalse(
@@ -271,7 +284,7 @@ class RobotContainer:
         button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
             commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
 
-        # Enable odo in auto. Maybe this works as planned?
+        # Enable odo in auto.
         button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(ToggleOdo(self.vision_system))
         button.Trigger(lambda: DriverStation.isAutonomous() and self.vision_system.vision_odo).onFalse(
             ToggleOdo(self.vision_system))
@@ -308,26 +321,20 @@ class RobotContainer:
                 ReadyShooter(self.shooter, "subwoofer"),
                 Shoot("readied", True, self.shooter, self.intake, self.trapper)))
 
-        # Hold for test shot (temporary lol)
-        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
-            commands2.SequentialCommandGroup(
-                ReadyShooter(self.shooter, "test"),
-                Shoot("readied", True, self.shooter, self.intake, self.trapper)))
-
         # Hold to autonomously shoot a NOTE.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-        #     ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
-        #     commands2.ParallelDeadlineGroup(
-        #         Shoot("readied", True, self.shooter, self.intake, self.trapper),
-        #         ShootLEDs(self.leds, "slow"))))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
+            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper, self.leds),
+            commands2.ParallelDeadlineGroup(
+                Shoot("readied", True, self.shooter, self.intake, self.trapper),
+                ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).onTrue(
-            ReadyAMP(self.trapper, self.shooter))
+            ReadyAMP(self.trapper, self.shooter, self.robot_drive))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
         button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
-            ScoreAMP(self.trapper))
+            ScoreAMP(self.trapper, self.robot_drive))
 
         # When a NOTE enters the trapper, flash all LEDs green.
         button.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
