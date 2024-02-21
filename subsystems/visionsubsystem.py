@@ -227,6 +227,12 @@ class VisionSubsystem(commands2.Subsystem):
             rotate_output = 0
         drive.drive_2ok(x_speed, y_speed, rotate_output, True)
 
+    def rotate_to_target_all_locations(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
+        if self.has_targets():
+            self.rotate_to_target(drive, x_speed, y_speed)
+        else:
+            self.align_to_speaker_odo(x_speed, y_speed, drive)
+
     def calculate_range_area(self):
         """This is intended for 'bad' ranging using area for something like closing to a game piece."""
         lookup_area_percent = [3.56, 0.80, 0.20]
@@ -280,20 +286,48 @@ class VisionSubsystem(commands2.Subsystem):
         else:
             return -1
 
-    # TODO Remove the code below, it's been deprecated.
-    def aim_and_fire(self, drive: DriveSubsystem,
-                     shooter: ShooterSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem) -> None:
-        """Once aimed, shoot."""
-        if self.has_targets() and self.range_to_angle() != -1:
-            shooter.set_angle(self.range_to_angle())
-            shooter.spin_up(VisionConstants.shooter_default_speed)
-            self.rotate_to_target(drive, 0, 0)  # Rotate in place.
-            if shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.tx < \
-                    VisionConstants.turn_to_target_error_max:
-                self.target_locked = True
-                intake.intake(1)
-                trapper.advance()
-                shooter.shoot()
-                ShootLEDs(leds, "fastest")
+    def range_to_angle_m(self) -> float:
+        lookup_dist = [65, 60, 55.8, 50.6]
+        lookup_angle = [0.495, 0.49, 0.48, 0.465]
+        if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
+            solution = -1
+            for x in range(0, len(lookup_dist) - 1):
+                if lookup_dist[x + 1] <= self.calculate_range_with_tag() < lookup_dist[x]:
+                    m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                    b = lookup_angle[x] - (m * lookup_dist[x])
+                    solution = (m * self.calculate_range_with_tag()) + b
+            return solution
+        else:
+            return -1
 
+    def no_sight_range_to_angle(self) -> float:
+        if self.has_targets():
+            return self.range_to_angle()
+        else:
+            return self.range_to_angle_m()
 
+    def align_to_speaker_odo(self, x_speed, y_speed, drive: DriveSubsystem) -> None:
+        """Intended to align robot to speaker even when the speaker is not in sight."""
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            x = drive.get_pose().x - VisionConstants.speaker_location_blue[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_blue[1]
+            if y > 0:
+                alpha = 90 - math.atan2(y, x)
+            else:
+                alpha = 360 - math.atan2(-y, x)
+        else:
+            x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
+            if y > 0:
+                alpha = 180 - (90 - math.atan2(y, -x))
+            else:
+                alpha = 180 + (90 - math.atan2(-y, -x))
+        drive.snap_drive(x_speed, y_speed, alpha)
+
+    def range_to_speaker_odo(self, drive: DriveSubsystem) -> float:
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            return math.sqrt(math.pow(drive.get_pose().x - VisionConstants.speaker_location_blue[0], 2) +
+                             math.pow(drive.get_pose().y - VisionConstants.speaker_location_blue[1], 2))
+        else:
+            return math.sqrt(math.pow(drive.get_pose().x - VisionConstants.speaker_location_red[0], 2) +
+                             math.pow(drive.get_pose().y - VisionConstants.speaker_location_red[1], 2))
