@@ -291,9 +291,9 @@ class RobotContainer:
         # button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(ShootLEDs(self.leds, "slow"))
 
         # Vibrate the driver controller when targets are in view (update later to be "within vision table")
-        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
+        button.Trigger(lambda: self.vision_system.no_sight_range_to_angle() != -1).whileTrue(
             commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(1)))
-        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
+        button.Trigger(lambda: self.vision_system.no_sight_range_to_angle() != -1).whileFalse(
             commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
 
     def configureTriggers1ControllerProfile(self):

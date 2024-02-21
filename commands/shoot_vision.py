@@ -39,7 +39,7 @@ class ShootVision(commands2.Command):
         self.target_locked = False
 
     def execute(self) -> None:
-        if self.vision.has_targets() and self.vision.range_to_angle() != -1:
+        if self.vision.has_targets() and self.vision.no_sight_range_to_angle() != -1:
             self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(),
                                               VisionConstants.shooter_default_speed)
             self.vision.rotate_to_target_all_locations(self.drive, 0, 0)
