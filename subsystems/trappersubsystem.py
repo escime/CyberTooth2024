@@ -6,7 +6,7 @@ from wpilib import DigitalInput, SmartDashboard
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 8.3, "trap": 20.27, "amp": 8.5, "stow": 0}
+    setpoints = {"stage": 8.3, "trap": 20.27, "amp": 9, "stow": 0}
 
     def __init__(self) -> None:
         super().__init__()
@@ -144,14 +144,14 @@ class TrapperSubsystem(commands2.Subsystem):
 
     def periodic(self) -> None:
         """Any periodic routines for the trapper."""
-        SmartDashboard.putNumber("Arm Position", self.arm_encoder.getPosition())
-        SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
+        # SmartDashboard.putNumber("Arm Position", self.arm_encoder.getPosition())
+        # SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
         if not self.sensor_bottom.get() and not self.sensor_top.get():
             self.note_acquisition_buffer[0] = True
         else:
             self.note_acquisition_buffer[0] = False
         self.note_acquisition_buffer = self.note_acquisition_buffer[1:] + self.note_acquisition_buffer[:1]
-        SmartDashboard.putBoolean("Note Acquired?", self.get_note_acquired())
-        SmartDashboard.putBooleanArray("Note Acquisition Buffer", self.note_acquisition_buffer)
-        SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
-        SmartDashboard.putNumber("Trapper Current Draw", self.trap.getOutputCurrent())
+        # SmartDashboard.putBoolean("Note Acquired?", self.get_note_acquired())
+        # SmartDashboard.putBooleanArray("Note Acquisition Buffer", self.note_acquisition_buffer)
+        # SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
+        # SmartDashboard.putNumber("Trapper Current Draw", self.trap.getOutputCurrent())

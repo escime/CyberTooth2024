@@ -4,12 +4,12 @@ from wpilib import Timer
 
 
 class Turn(commands2.Command):
-    def __init__(self, robot_drive: DriveSubsystem, target):
+    def __init__(self, robot_drive: DriveSubsystem, target, timer: Timer):
         super().__init__()
         self.robot_drive = robot_drive
         self.target = target
         self.addRequirements(robot_drive)
-        self.timer = Timer()
+        self.timer = timer
         self.start_time = 0
 
     def initialize(self):
@@ -25,6 +25,3 @@ class Turn(commands2.Command):
             return True
         else:
             return False
-
-    def end(self, interrupted: bool):
-        print("Turn complete.")

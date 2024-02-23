@@ -4,17 +4,16 @@ from wpilib import Timer
 
 
 class ReadyShooter(commands2.Command):
-    def __init__(self, shooter: ShooterSubsystem, setpoint: str):
+    def __init__(self, shooter: ShooterSubsystem, setpoint: str, timer: Timer):
         super().__init__()
         self.shooter = shooter
         self.setpoint = setpoint
         self.addRequirements(shooter)
-        self.timer = Timer()
+        self.timer = timer
         self.start_time = 0
 
     def initialize(self) -> None:
         self.shooter.set_known_setpoint(self.setpoint)
-        self.timer.start()
         self.start_time = self.timer.get()
 
     def isFinished(self) -> bool:
@@ -22,6 +21,3 @@ class ReadyShooter(commands2.Command):
             return True
         else:
             return False
-
-    def end(self, interrupted: bool):
-        print("ReadyShooter complete.")

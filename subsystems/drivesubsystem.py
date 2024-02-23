@@ -14,10 +14,9 @@ from pathplannerlib.config import HolonomicPathFollowerConfig, ReplanningConfig,
 
 class DriveSubsystem(commands2.SubsystemBase):
     # Creates a new DriveSubsystem
-    def __init__(self) -> None:
+    def __init__(self, timer: Timer) -> None:
         super().__init__()
         self.gyro = Pigeon2(9)
-        # print(self.gyro.getFirmwareVersion())
         self.m_odometry = SwerveDrive4PoseEstimator(DriveConstants.m_kinematics,
                                                     Rotation2d.fromDegrees(-self.get_heading()),
                                                     (SwerveModulePosition(0, Rotation2d(0)),
@@ -96,15 +95,13 @@ class DriveSubsystem(commands2.SubsystemBase):
 
         self.blue_alliance = False
 
+        self.timer = timer
+        self.last_time = 0
+        self.period_update_time = self.timer.get()
+        self.current_time = self.timer.get()
+
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
-
-    # Start timer for 2nd order kinematics.
-    timer = Timer()
-    timer.start()
-    last_time = 0
-    period_update_time = timer.get()
-    current_time = timer.get()
 
     def get_chassis_speeds(self):
         """Used for 2024 PathPlanner. Converts current module states to a ChassisSpeeds object."""
@@ -230,25 +227,25 @@ class DriveSubsystem(commands2.SubsystemBase):
                                 self.m_BL.get_position(),
                                 self.m_BR.get_position()))
         self.m_field.setRobotPose(self.get_pose())
-        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            self.blue_alliance = True
-        else:
-            self.blue_alliance = False
 
         if self.timer.get() - 0.5 > self.period_update_time:
-            if -5 < self.gyro.getRoll() < 5:
-                self.balanced = True
+            if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+                self.blue_alliance = True
             else:
-                self.balanced = False
+                self.blue_alliance = False
+            # if -5 < self.gyro.getRoll() < 5:
+            #     self.balanced = True
+            # else:
+            #     self.balanced = False
             # TODO Check if this whole "global variables" methodology works at all. Kinda doubt it ngl.
-            if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
-                    self.get_pose().y - GlobalVariables.current_vision.y < 1:
-                self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
+            # if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
+            #         self.get_pose().y - GlobalVariables.current_vision.y < 1:
+            #     self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
+            # SmartDashboard.putData("Field", self.m_field)
+            # SmartDashboard.putNumber("Current Odo Heading", self.get_heading_odo().degrees())
             self.period_update_time = self.timer.get()
 
-        SmartDashboard.putData("Field", self.m_field)
-        SmartDashboard.putNumber("Robot Heading", self.get_heading())
-        SmartDashboard.putNumber("Current Odo Heading", self.get_heading_odo().degrees())
+        # SmartDashboard.putNumber("Robot Heading", self.get_heading())
         # SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
         # SmartDashboard.putBoolean("Balanced?", self.balanced)
         # SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
@@ -266,8 +263,6 @@ class DriveSubsystem(commands2.SubsystemBase):
 
     def get_pose(self):
         """Return pose estimator's estimated position."""
-        # return Pose2d(self.m_odometry.getEstimatedPosition().x, self.m_odometry.getEstimatedPosition().y,
-        #               self.m_odometry.getEstimatedPosition().rotation())
         return self.m_odometry.getEstimatedPosition()
 
     def add_vision(self, pose: Pose2d, timestamp: float):

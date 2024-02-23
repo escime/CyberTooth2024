@@ -2,19 +2,23 @@ import commands2
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from constants import IntakeConstants
+from wpilib import Timer
 
 
 class Intake(commands2.Command):
 
     # TODO Add a timeout here in case the sensors stop working.
-    def __init__(self, intake: IntakeSubsystem, trapper: TrapperSubsystem):
+    def __init__(self, intake: IntakeSubsystem, trapper: TrapperSubsystem, timer: Timer):
         super().__init__()
         self.intake = intake
         self.trapper = trapper
         self.addRequirements(intake)
         self.addRequirements(trapper)
+        self.timer = timer
+        self.start_time = 0
 
     def initialize(self):
+        self.start_time = self.timer.get()
         self.trapper.stow()
 
     def execute(self):
@@ -22,7 +26,10 @@ class Intake(commands2.Command):
         self.trapper.advance_to_trapper()
 
     def isFinished(self) -> bool:
-        return self.trapper.get_note_acquired()
+        if self.trapper.get_note_acquired() or self.timer.get() - 5 > self.start_time:
+            return True
+        else:
+            return False
 
     def end(self, interrupted: bool):
         self.intake.intake(0)

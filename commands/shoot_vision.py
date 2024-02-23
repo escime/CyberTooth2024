@@ -11,7 +11,7 @@ from wpilib import Timer
 
 class ShootVision(commands2.Command):
     def __init__(self, bypass_timer: bool, shooter: ShooterSubsystem, vision: VisionSubsystem,
-                 drive: DriveSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem, leds: LEDs):
+                 drive: DriveSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem, leds: LEDs, timer: Timer):
         super().__init__()
         self.bypass_timer = bypass_timer
         self.shooter = shooter
@@ -25,13 +25,12 @@ class ShootVision(commands2.Command):
         self.addRequirements(drive)
         self.addRequirements(intake)
         self.addRequirements(trapper)
-        self.timer = Timer()
-        self.start_time = 1000
+        self.timer = timer
+        self.start_time = 10000
         self.overrun_time = self.timer.get()
         self.target_locked = False
 
     def initialize(self):
-        self.timer.start()
         self.vision.vision_odo = False
         self.overrun_time = self.timer.get()
         self.target_locked = False
@@ -46,7 +45,7 @@ class ShootVision(commands2.Command):
 
     def isFinished(self) -> bool:
         if not self.bypass_timer:
-            if self.target_locked or self.timer.get() - 3 > self.overrun_time:
+            if self.target_locked or self.timer.get() - 2 > self.overrun_time:
                 return True
             else:
                 return False
@@ -60,4 +59,3 @@ class ShootVision(commands2.Command):
         self.drive.drive_2ok(0, 0, 0, False)
         if interrupted:
             self.shooter.set_known_setpoint("readied")
-        print("ShootVision complete.")

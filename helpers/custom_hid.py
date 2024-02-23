@@ -1,5 +1,6 @@
 import wpilib
 import math
+from wpimath.filter import SlewRateLimiter
 
 
 class CustomHID:
@@ -17,6 +18,8 @@ class CustomHID:
         else:
             self.controller = wpilib.Joystick(port)
             self.controller_type = "generic"
+
+        self.slew_limiter = SlewRateLimiter(0.5, 0, 0)
 
     def reset_controller(self, hid, port):
         if hid == "xbox":
@@ -235,3 +238,6 @@ class CustomHID:
     def refine_trigger(self, trigger: str, deadband: float, maxi: float, mini: float) -> float:
         """Modification of get_trigger() that refines its output between a maximum and a minimum value"""
         return (1 - self.get_trigger_raw(trigger, deadband)) * (maxi - mini) + mini
+
+    def slew_axis(self, axis: str, threshold: float) -> float:
+        return 0  # does nothing for now

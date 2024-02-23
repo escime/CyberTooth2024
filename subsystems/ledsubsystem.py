@@ -6,7 +6,6 @@ import random
 class LEDs(commands2.SubsystemBase):
 
     animation_delay = 50
-    timer = Timer()
     m_pattern = None
     record_time = None
     rainbow_pattern = []
@@ -23,8 +22,9 @@ class LEDs(commands2.SubsystemBase):
     amp_timer_on = False
     amp_index = 0
 
-    def __init__(self, port: int, length: int, num: int, animation_speed: float, style: str) -> None:
+    def __init__(self, port: int, length: int, num: int, animation_speed: float, style: str, timer: Timer) -> None:
         super().__init__()
+        self.timer = timer
         self.style = style
         self.m_led = AddressableLED(port)  # Connect the LED chain to the right port.
         self.length = length  # Set the length from the constructor.
@@ -40,7 +40,6 @@ class LEDs(commands2.SubsystemBase):
         self.m_led.setData(self.m_ledBuffer_complete)
         self.m_led.start()
         self.animation_delay = animation_speed
-        self.timer.start()
         self.record_time = self.timer.get()
 
         # Setup rainbow pattern default

@@ -31,7 +31,7 @@ class DriveConstants:
     m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
-    snap_controller_PID = [0, 0, 0]
+    snap_controller_PID = [0.05, 0, 0]
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
     drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
@@ -48,11 +48,11 @@ class DriveConstants:
 
 
 class AutoConstants:
-    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.5
+    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.75
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 2  # Previously 12
-    kPThetaController = 3  # Previously 10
+    kPXController = 3  # Previously 12
+    kPThetaController = 5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond
@@ -93,7 +93,7 @@ class TrapperConstants:
     arm_limit = 60
     climb_limit = 60
     trap_speed = 0.5
-    amp_speed = 0.6
+    amp_speed = 0.4
     climber_preset = 188
     climber_preset_2 = 188
     sport_reduction = 1/16
@@ -115,7 +115,7 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.05  # Will require tuning.
+    turnkP = 0.07  # Will require tuning.
     rangekP = 0.05
     turn_to_target_error_max = 2  # In degrees.
     min_command = 0.05  # Should be in volts, will require tuning.
@@ -126,15 +126,15 @@ class ShooterConstants:
     top_id = 34
     bottom_id = 33
     current_limit = 38
-    shooter_kFF = 0.000185
+    shooter_kFF = 0.000187
     shooter_kP = 0
     shooter_kD = 0
     angle_kP = 4
     feeder_speed = 0.5
     threshold = 500
-    threshold_ang = 0.01
+    threshold_ang = 0.008
     threshold_fired = 30
-    trim = 0
+    trim = -0.005
 
 
 class GlobalVariables:

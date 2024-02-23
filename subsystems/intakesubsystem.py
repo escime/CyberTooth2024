@@ -23,5 +23,5 @@ class IntakeSubsystem(commands2.Subsystem):
         """Power the intake motors."""
         self.motor.setVoltage(voltage * 12)
 
-    def periodic(self) -> None:
-        SmartDashboard.putNumber("Intake Current Draw", self.motor.getOutputCurrent())
+#     def periodic(self) -> None:
+#         SmartDashboard.putNumber("Intake Current Draw", self.motor.getOutputCurrent())

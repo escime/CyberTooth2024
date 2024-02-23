@@ -3,12 +3,12 @@ from ntcore import NetworkTableInstance
 from wpilib import SmartDashboard, DriverStation, Timer
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from subsystems.drivesubsystem import DriveSubsystem
-from subsystems.ledsubsystem import LEDs
-from subsystems.shootersubsystem import ShooterSubsystem
-from subsystems.intakesubsystem import IntakeSubsystem
-from subsystems.trappersubsystem import TrapperSubsystem
-from commands.shoot_leds import ShootLEDs
-from constants import VisionConstants, DriveConstants, GlobalVariables
+# from subsystems.ledsubsystem import LEDs
+# from subsystems.shootersubsystem import ShooterSubsystem
+# from subsystems.intakesubsystem import IntakeSubsystem
+# from subsystems.trappersubsystem import TrapperSubsystem
+# from commands.shoot_leds import ShootLEDs
+from constants import VisionConstants, GlobalVariables
 import math
 from wpimath.controller import PIDController
 
@@ -28,19 +28,18 @@ class VisionSubsystem(commands2.Subsystem):
     pov = "back"
     auto_cam_swap = True
     calc_override = False
-    timer = Timer()
     turn_to_target_controller = PIDController(VisionConstants.turnkP, 0, 0)
     approach_target_controller = PIDController(VisionConstants.rangekP, 0, 0)
     pipeline_id = 0
     vision_odo = False
     target_locked = False
 
-    def __init__(self) -> None:
+    def __init__(self, timer: Timer) -> None:
         super().__init__()
+        self.timer = timer
         # self.robot_drive = robot_drive  # This is structurally not great but necessary for certain features.
         self.limelight_table = NetworkTableInstance.getDefault().getTable("limelight")
         self.limelight_front = NetworkTableInstance.getDefault().getTable("llf")
-        self.timer.start()
         self.record_time = self.timer.get()
         self.latency = 0
 
@@ -65,8 +64,8 @@ class VisionSubsystem(commands2.Subsystem):
     def update_values(self):
         """Update relevant values from LL NT to robot variables."""
         self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
-        self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
-        self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
+        # self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        # self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
         self.tl = self.limelight_table.getEntry("tl").getDouble(0.0)  # Get pipeline latency contribution.
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
@@ -85,8 +84,8 @@ class VisionSubsystem(commands2.Subsystem):
     def update_values_safe(self):
         """Update relevant values from LL NT to robot variables."""
         self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
-        self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
-        self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
+        # self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        # self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
         self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)  # Get which tag is currently in view.
@@ -147,13 +146,15 @@ class VisionSubsystem(commands2.Subsystem):
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
-            if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
-                if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
-                    self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
-            else:  # Otherwise,
-                if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
-                    self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-            self.update_values_safe()  # Update all values.
+            if self.timer.get() - 0.1 > self.record_time:
+                if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
+                    if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
+                        self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
+                else:  # Otherwise,
+                    if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
+                        self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
+                self.update_values_safe()  # Update all values.
+                self.record_time = self.timer.get()
 
         SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
         SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
@@ -264,8 +265,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""
-        lookup_dist = [65, 60, 55.8, 50.6]
-        lookup_angle = [0.857, 0.847, 0.837, 0.822]
+        lookup_dist = [65.02, 60.10, 55.07, 50.0]
+        lookup_angle = [0.772, 0.765, 0.756, 0.74]
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1
@@ -279,21 +280,3 @@ class VisionSubsystem(commands2.Subsystem):
                 return -1
         else:
             return -1
-
-    # TODO Remove the code below, it's been deprecated.
-    def aim_and_fire(self, drive: DriveSubsystem,
-                     shooter: ShooterSubsystem, leds: LEDs, intake: IntakeSubsystem, trapper: TrapperSubsystem) -> None:
-        """Once aimed, shoot."""
-        if self.has_targets() and self.range_to_angle() != -1:
-            shooter.set_angle(self.range_to_angle())
-            shooter.spin_up(VisionConstants.shooter_default_speed)
-            self.rotate_to_target(drive, 0, 0)  # Rotate in place.
-            if shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.tx < \
-                    VisionConstants.turn_to_target_error_max:
-                self.target_locked = True
-                intake.intake(1)
-                trapper.advance()
-                shooter.shoot()
-                ShootLEDs(leds, "fastest")
-
-

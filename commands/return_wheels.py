@@ -26,6 +26,3 @@ class ReturnWheels(commands2.Command):
             return True
         else:
             return False
-
-    def end(self, interrupted: bool):
-        print("ReturnWheels completed.")
