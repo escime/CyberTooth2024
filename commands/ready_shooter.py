@@ -1,9 +1,9 @@
-import commands2
+from commands2 import Command
 from subsystems.shootersubsystem import ShooterSubsystem
 from wpilib import Timer
 
 
-class ReadyShooter(commands2.Command):
+class ReadyShooter(Command):
     def __init__(self, shooter: ShooterSubsystem, setpoint: str, timer: Timer):
         super().__init__()
         self.shooter = shooter
@@ -21,3 +21,6 @@ class ReadyShooter(commands2.Command):
             return True
         else:
             return False
+
+    def end(self, interrupted: bool):
+        print("ReadyShooter complete.")

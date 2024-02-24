@@ -33,6 +33,7 @@ class VisionSubsystem(commands2.Subsystem):
     pipeline_id = 0
     vision_odo = False
     target_locked = False
+    alpha = 0
 
     def __init__(self, timer: Timer) -> None:
         super().__init__()
@@ -159,6 +160,7 @@ class VisionSubsystem(commands2.Subsystem):
         SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
         SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
         SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
+        SmartDashboard.putNumber("Alpha", self.alpha)
         # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
 
     def toggle_camera(self) -> None:
@@ -280,3 +282,72 @@ class VisionSubsystem(commands2.Subsystem):
                 return -1
         else:
             return -1
+
+    def rotate_to_target_all_locations(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
+        if self.has_targets() and self.tag_id == 4 or self.tag_id == 7:
+            self.rotate_to_target(drive, x_speed, y_speed)
+        else:
+            self.align_to_speaker_odo(x_speed, y_speed, drive)
+
+    def no_sight_range_to_angle(self, drive: DriveSubsystem) -> float:
+        if self.has_targets() and self.tag_id == 4 or self.tag_id == 7:
+            return self.range_to_angle()
+        else:
+            return self.range_to_angle_m(drive)
+
+    def align_to_speaker_odo(self, x_speed, y_speed, drive: DriveSubsystem) -> None:
+        """Intended to align robot to speaker even when the speaker is not in sight."""
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            x = drive.get_pose().x - VisionConstants.speaker_location_blue[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_blue[1]
+            if y > 0:
+                # TODO FIX THIS MATH! (BLUE ONLY)
+                alpha = 90 - math.degrees(math.atan2(y, x))
+            else:
+                alpha = 360 - math.degrees(math.atan2(-y, x))
+        else:
+            x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
+            if y > 0:
+                alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
+            else:
+                alpha = math.degrees(math.atan2(-y, -x)) + 180
+        self.alpha = alpha
+        drive.snap_drive(x_speed, y_speed, alpha)
+
+    def get_aligned_odo(self, drive: DriveSubsystem) -> bool:
+        heading = drive.get_heading_odo().degrees()
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            heading = heading + 180
+        if self.alpha - VisionConstants.turn_to_target_error_max < heading < \
+                self.alpha + VisionConstants.turn_to_target_error_max:
+            print("ALIGNED!")
+            return True
+        else:
+            return False
+
+    def range_to_speaker_odo(self, drive: DriveSubsystem) -> float:
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            return math.sqrt(math.pow(drive.get_pose().x - VisionConstants.speaker_location_blue[0], 2) +
+                             math.pow(drive.get_pose().y - VisionConstants.speaker_location_blue[1], 2))
+        else:
+            return math.sqrt(math.pow(drive.get_pose().x - VisionConstants.speaker_location_red[0], 2) +
+                             math.pow(drive.get_pose().y - VisionConstants.speaker_location_red[1], 2))
+
+    def range_to_angle_m(self, drive: DriveSubsystem) -> float:
+        # TODO TUNE
+        lookup_dist = [4.465628, 3.469694, 2.720572, 2.0826]
+        lookup_angle = [0.772, 0.765, 0.756, 0.74]
+        if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
+            solution = -1
+            for x in range(0, len(lookup_dist) - 1):
+                if lookup_dist[x + 1] <= self.range_to_speaker_odo(drive) < lookup_dist[x]:
+                    m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                    b = lookup_angle[x] - (m * lookup_dist[x])
+                    solution = (m * self.range_to_speaker_odo(drive)) + b
+            return solution
+        else:
+            return -1
+
+    def for_testing_no_viz(self, drive: DriveSubsystem) -> None:
+        print("Calculated Range from Speaker" + str(self.range_to_speaker_odo(drive)))

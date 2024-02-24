@@ -139,8 +139,8 @@ class ShooterSubsystem(commands2.Subsystem):
         # SmartDashboard.putNumber("Bottom Shooter Speed", self.shooter_encoder_bottom.getVelocity())
         # SmartDashboard.putNumber("Target Shooter Speed", self.shooter_setpoint)
         # SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
-        # SmartDashboard.putNumber("Current Trim", self.trim)
-        # SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
+        SmartDashboard.putNumber("Current Trim", self.trim)
+        SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
 
     def tuning_toggler(self, on: bool) -> None:
         if on:

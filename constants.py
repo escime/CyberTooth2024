@@ -32,6 +32,7 @@ class DriveConstants:
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
     snap_controller_PID = [0.05, 0, 0]
+    clt_controller_PID = [1, 0, 0]
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
     drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
@@ -120,6 +121,8 @@ class VisionConstants:
     turn_to_target_error_max = 2  # In degrees.
     min_command = 0.05  # Should be in volts, will require tuning.
     shooter_default_speed = 4500
+    speaker_location_blue = [0, 5.53]
+    speaker_location_red = [16.5, 5.53]
 
 
 class ShooterConstants:

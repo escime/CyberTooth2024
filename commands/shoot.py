@@ -1,11 +1,11 @@
-import commands2
+from commands2 import Command
 from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from wpilib import Timer
 
 
-class Shoot(commands2.Command):
+class Shoot(Command):
     def __init__(self, fallback: str, bypass_timeout: bool, shooter: ShooterSubsystem, intake: IntakeSubsystem,
                  trapper: TrapperSubsystem, timer: Timer):
         super().__init__()
@@ -52,3 +52,4 @@ class Shoot(commands2.Command):
         self.shooter.feeder.set(0)
         self.intake.intake(0)
         self.trapper.manual_trap(0)
+        print("Shoot complete.")

@@ -1,4 +1,4 @@
-import commands2
+from commands2 import Command
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.visionsubsystem import VisionSubsystem
@@ -7,7 +7,7 @@ from subsystems.ledsubsystem import LEDs
 from wpilib import Timer
 
 
-class DriveToNote(commands2.Command):
+class DriveToNote(Command):
 
     def __init__(self, drive: DriveSubsystem, intake: IntakeSubsystem,
                  vision: VisionSubsystem, trapper: TrapperSubsystem, leds: LEDs):

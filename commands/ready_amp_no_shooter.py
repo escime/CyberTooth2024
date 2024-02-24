@@ -1,9 +1,8 @@
-import commands2
+from commands2 import Command
 from subsystems.trappersubsystem import TrapperSubsystem
-from subsystems.shootersubsystem import ShooterSubsystem
 
 
-class ReadyAMPNoShooter(commands2.Command):
+class ReadyAMPNoShooter(Command):
 
     def __init__(self, trapper: TrapperSubsystem):
         super().__init__()

@@ -1,9 +1,9 @@
-import commands2
+from commands2 import Command
 from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.ledsubsystem import LEDs
 
 
-class FlashLL(commands2.Command):
+class FlashLL(Command):
     def __init__(self, viz: VisionSubsystem, leds: LEDs):
         super().__init__()
         self.viz = viz

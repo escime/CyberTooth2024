@@ -1,8 +1,8 @@
-import commands2
+from commands2 import Command, InterruptionBehavior
 from subsystems.ledsubsystem import LEDs
 
 
-class AmpLEDs(commands2.Command):
+class AmpLEDs(Command):
     def __init__(self, leds: LEDs):
         super().__init__()
         self.leds = leds
@@ -17,8 +17,8 @@ class AmpLEDs(commands2.Command):
         else:
             return False
 
-    def getInterruptionBehavior(self) -> commands2.InterruptionBehavior:
-        return commands2.InterruptionBehavior.kCancelIncoming
+    def getInterruptionBehavior(self) -> InterruptionBehavior:
+        return InterruptionBehavior.kCancelIncoming
 
     def runsWhenDisabled(self) -> bool:
         return True

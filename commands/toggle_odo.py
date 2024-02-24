@@ -1,8 +1,8 @@
-import commands2
+from commands2 import Command
 from subsystems.visionsubsystem import VisionSubsystem
 
 
-class ToggleOdo(commands2.Command):
+class ToggleOdo(Command):
 
     def __init__(self, viz: VisionSubsystem):
         super().__init__()

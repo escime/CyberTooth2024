@@ -1,4 +1,4 @@
-import commands2
+from commands2 import Command
 from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
@@ -9,7 +9,7 @@ from constants import VisionConstants
 from wpilib import Timer
 
 
-class ShootVision(commands2.Command):
+class ShootVision(Command):
     def __init__(self, bypass_timer: bool, shooter: ShooterSubsystem, vision: VisionSubsystem,
                  drive: DriveSubsystem, intake: IntakeSubsystem, trapper: TrapperSubsystem, leds: LEDs, timer: Timer):
         super().__init__()
@@ -36,11 +36,22 @@ class ShootVision(commands2.Command):
         self.target_locked = False
 
     def execute(self) -> None:
-        if self.vision.has_targets() and self.vision.range_to_angle() != -1:
-            self.shooter.set_unknown_setpoint(self.vision.range_to_angle(), VisionConstants.shooter_default_speed)
-            self.vision.rotate_to_target(self.drive, 0, 0)
-            if self.shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.vision.tx < \
-                    VisionConstants.turn_to_target_error_max:
+        # Old logic still exists here :)
+        # if self.vision.has_targets() and self.vision.range_to_angle() != -1:
+        #     self.shooter.set_unknown_setpoint(self.vision.range_to_angle(), VisionConstants.shooter_default_speed)
+        #     self.vision.rotate_to_target(self.drive, 0, 0)
+        #     if self.shooter.get_ready_to_shoot() and -VisionConstants.turn_to_target_error_max < self.vision.tx < \
+        #             VisionConstants.turn_to_target_error_max:
+        #         self.target_locked = True
+
+        if self.vision.no_sight_range_to_angle(self.drive) != -1:
+            self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
+                                              VisionConstants.shooter_default_speed)
+            self.vision.rotate_to_target_all_locations(self.drive, 0, 0)
+            if self.shooter.get_ready_to_shoot() and (-VisionConstants.turn_to_target_error_max < self.vision.tx <
+                                                      VisionConstants.turn_to_target_error_max or
+                                                      self.vision.get_aligned_odo(self.drive)):
+                print("TARGET LOCKED!")
                 self.target_locked = True
 
     def isFinished(self) -> bool:
@@ -56,6 +67,5 @@ class ShootVision(commands2.Command):
                 return False
 
     def end(self, interrupted: bool):
-        self.drive.drive_2ok(0, 0, 0, False)
         if interrupted:
             self.shooter.set_known_setpoint("readied")

@@ -1,10 +1,10 @@
-import commands2
+from commands2 import Command
 from subsystems.trappersubsystem import TrapperSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
 from wpilib import DriverStation
 
 
-class ScoreAMP(commands2.Command):
+class ScoreAMP(Command):
 
     def __init__(self, trapper: TrapperSubsystem, drive: DriveSubsystem):
         super().__init__()

@@ -1,8 +1,8 @@
-import commands2
+from commands2 import Command
 from subsystems.utilsubsystem import UtilSubsystem
 
 
-class SwitchPDHChannel(commands2.Command):
+class SwitchPDHChannel(Command):
 
     def __init__(self, on: bool, util: UtilSubsystem):
         super().__init__()

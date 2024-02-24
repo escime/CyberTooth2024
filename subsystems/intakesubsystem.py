@@ -1,7 +1,6 @@
 import commands2
 from constants import IntakeConstants
 from rev import CANSparkMax
-from wpilib import SmartDashboard
 
 
 class IntakeSubsystem(commands2.Subsystem):

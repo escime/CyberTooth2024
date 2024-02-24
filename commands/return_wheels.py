@@ -1,9 +1,9 @@
-import commands2
+from commands2 import Command
 from subsystems.drivesubsystem import DriveSubsystem
 from wpilib import Timer
 
 
-class ReturnWheels(commands2.Command):
+class ReturnWheels(Command):
     def __init__(self, robot_drive: DriveSubsystem):
         super().__init__()
         self.robot_drive = robot_drive

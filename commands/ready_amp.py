@@ -1,11 +1,11 @@
-import commands2
+from commands2 import Command
 from subsystems.trappersubsystem import TrapperSubsystem
 from subsystems.shootersubsystem import ShooterSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
 from wpilib import DriverStation
 
 
-class ReadyAMP(commands2.Command):
+class ReadyAMP(Command):
 
     def __init__(self, trapper: TrapperSubsystem, shooter: ShooterSubsystem, drive: DriveSubsystem):
         super().__init__()

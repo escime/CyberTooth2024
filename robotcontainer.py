@@ -68,14 +68,23 @@ class RobotContainer:
         # Perform setup as normal, unless tuning mode is enabled.
         if not tuning_setter:
             # Set the default drive command.
+            # self.robot_drive.setDefaultCommand(commands2.cmd.run(
+            #     lambda: self.robot_drive.drive_2ok(
+            #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+            #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+            #         self.driver_controller_raw.get_axis("RX", 0.06) *
+            #         DriveConstants.kMaxAngularSpeed,
+            #         True),
+            #     self.robot_drive
+            # ))
+
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
-                lambda: self.robot_drive.drive_2ok(
-                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                    self.driver_controller_raw.get_axis("RX", 0.06) *
-                    DriveConstants.kMaxAngularSpeed,
-                    True),
-                self.robot_drive
+                lambda: self.robot_drive.drive_2ok_clt(
+                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.8,
+                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.8,
+                    self.driver_controller_raw.get_axis("RX", 0.06) * -1,
+                    5
+                ), self.robot_drive
             ))
 
             # Set default subsystem commands.
@@ -207,9 +216,10 @@ class RobotContainer:
         button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
             ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
                         self.leds, self.timer),
-            commands2.ParallelDeadlineGroup(
+            commands2.ParallelCommandGroup(
+               commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer),
-                ShootLEDs(self.leds, "slow"))))
+               ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
         button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(
@@ -224,7 +234,9 @@ class RobotContainer:
         #     DriveToNote(self.robot_drive, self.intake, self.vision_system, self.trapper, self.leds))
 
         # When a NOTE enters the trapper, flash all LEDs green.
-        button.Trigger(lambda: self.trapper.get_note_acquired()).onTrue(FlashLL(self.vision_system, self.leds))
+        button.Trigger(lambda: self.trapper.get_note_acquired() and
+                       (DriverStation.isTeleopEnabled() or
+                       DriverStation.isDisabled())).onTrue(FlashLL(self.vision_system, self.leds))
 
         # Start an AMPLIFICATION timer.
         button.Trigger(lambda: self.operator_controller_raw.get_button("MENU")).onTrue(AmpLEDs(self.leds))
@@ -266,7 +278,7 @@ class RobotContainer:
 
         # Hold to intake a NOTE.
         button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1)).whileTrue(
-            Intake(self.intake, self.trapper, self.timer))
+            Intake(self.intake, self.trapper, True, self.timer))
 
         # Hold to spit out a NOTE.
         button.Trigger(lambda: self.operator_controller_raw.get_trigger("L", 0.1)).whileTrue(
@@ -301,8 +313,12 @@ class RobotContainer:
         #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(False), self.shooter))
         button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
             commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
+        #     commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
         button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
-            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
+            commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
+                                  self.vision_system, self.robot_drive)
+        )
         # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
         #     commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("subwoofer"), self.shooter))
 
@@ -333,7 +349,7 @@ class RobotContainer:
     def registerCommands(self):
         NamedCommands.registerCommand("return_wheels", ReturnWheels(self.robot_drive))
         NamedCommands.registerCommand("ready_shooter", ReadyShooter(self.shooter, "subwoofer", self.timer))
-        NamedCommands.registerCommand("intake", Intake(self.intake, self.trapper, self.timer))
+        NamedCommands.registerCommand("intake", Intake(self.intake, self.trapper, False, self.timer))
         # NamedCommands.registerCommand("drive_to_note", DriveToNote(self.robot_drive, self.intake,
         #                                                            self.vision_system, self.trapper, self.leds,
         #                                                            self.timer))
@@ -343,6 +359,7 @@ class RobotContainer:
                         self.trapper, self.leds, self.timer),
             commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),
+                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
                 ShootLEDs(self.leds, "slow"))))
         NamedCommands.registerCommand("shoot", commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),

@@ -151,7 +151,7 @@ class TrapperSubsystem(commands2.Subsystem):
         else:
             self.note_acquisition_buffer[0] = False
         self.note_acquisition_buffer = self.note_acquisition_buffer[1:] + self.note_acquisition_buffer[:1]
-        # SmartDashboard.putBoolean("Note Acquired?", self.get_note_acquired())
+        SmartDashboard.putBoolean("Note Acquired?", self.get_note_acquired())
         # SmartDashboard.putBooleanArray("Note Acquisition Buffer", self.note_acquisition_buffer)
-        # SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
+        SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
         # SmartDashboard.putNumber("Trapper Current Draw", self.trap.getOutputCurrent())

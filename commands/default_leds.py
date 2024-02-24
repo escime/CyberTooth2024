@@ -1,8 +1,8 @@
-import commands2
+from commands2 import Command
 from subsystems.ledsubsystem import LEDs
 
 
-class DefaultLEDs(commands2.CommandBase):
+class DefaultLEDs(Command):
     def __init__(self, leds: LEDs):
         super().__init__()
         self.leds = leds

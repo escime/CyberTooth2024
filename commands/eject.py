@@ -1,10 +1,10 @@
-import commands2
+from commands2 import Command
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
 from subsystems.shootersubsystem import ShooterSubsystem
 
 
-class Eject(commands2.Command):
+class Eject(Command):
 
     def __init__(self, intake: IntakeSubsystem, trapper: TrapperSubsystem, shooter: ShooterSubsystem):
         super().__init__()
