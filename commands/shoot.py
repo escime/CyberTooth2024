@@ -52,4 +52,4 @@ class Shoot(Command):
         self.shooter.feeder.set(0)
         self.intake.intake(0)
         self.trapper.manual_trap(0)
-        print("Shoot complete.")
+        # print("Shoot complete.")

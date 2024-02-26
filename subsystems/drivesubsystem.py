@@ -106,6 +106,8 @@ class DriveSubsystem(commands2.Subsystem):
         self.period_update_time = self.timer.get()
         self.current_time = self.timer.get()
 
+        self.m_odometry.setVisionMeasurementStdDevs((0.7, 0.7, 999999999))
+
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
 
@@ -252,9 +254,9 @@ class DriveSubsystem(commands2.Subsystem):
             # else:
             #     self.balanced = False
             # TODO Check if this whole "global variables" methodology works at all. Kinda doubt it ngl.
-            if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
-                    self.get_pose().y - GlobalVariables.current_vision.y < 1:
-                self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
+            # if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
+            #         self.get_pose().y - GlobalVariables.current_vision.y < 1:
+            #     self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
             self.period_update_time = self.timer.get()
 
         SmartDashboard.putData("Field", self.m_field)
@@ -305,6 +307,22 @@ class DriveSubsystem(commands2.Subsystem):
                                        SwerveModulePosition(0, self.m_BL_position.angle),
                                        SwerveModulePosition(0, self.m_BR_position.angle)),
                                       pose)
+
+    def reset_position_no_rotation(self, location: Translation2d):
+        if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
+            current_rotation = Rotation2d.fromDegrees(-1 * self.get_heading() + 180)
+        else:
+            current_rotation = Rotation2d.fromDegrees(-1 * self.get_heading())
+        self.m_FL.reset_encoders()
+        self.m_FR.reset_encoders()
+        self.m_BL.reset_encoders()
+        self.m_BR.reset_encoders()
+        self.m_odometry.resetPosition(Rotation2d.fromDegrees(-self.get_heading()),
+                                      (SwerveModulePosition(0, self.m_FL_position.angle),
+                                       SwerveModulePosition(0, self.m_FR_position.angle),
+                                       SwerveModulePosition(0, self.m_BL_position.angle),
+                                       SwerveModulePosition(0, self.m_BR_position.angle)),
+                                      Pose2d(location, current_rotation))
 
     def set_module_states(self, desired_states):
         """Set swerve module states given a list of target states. Used to simplify drive_2ok."""

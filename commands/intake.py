@@ -40,7 +40,7 @@ class Intake(Command):
     def end(self, interrupted: bool):
         self.intake.intake(0)
         self.trapper.manual_trap(0)
-        if interrupted:
-            print("Intake interrupted!")
-        else:
-            print("Intake complete!")
+        # if interrupted:
+        #     print("Intake interrupted!")
+        # else:
+        #     print("Intake complete!")

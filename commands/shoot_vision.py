@@ -31,7 +31,7 @@ class ShootVision(Command):
         self.target_locked = False
 
     def initialize(self):
-        self.vision.vision_odo = False
+        self.vision.vision_odo_manual(False)
         self.overrun_time = self.timer.get()
         self.target_locked = False
 
@@ -51,7 +51,7 @@ class ShootVision(Command):
             if self.shooter.get_ready_to_shoot() and (-VisionConstants.turn_to_target_error_max < self.vision.tx <
                                                       VisionConstants.turn_to_target_error_max or
                                                       self.vision.get_aligned_odo(self.drive)):
-                print("TARGET LOCKED!")
+                # print("TARGET LOCKED!")
                 self.target_locked = True
 
     def isFinished(self) -> bool:
@@ -69,3 +69,4 @@ class ShootVision(Command):
     def end(self, interrupted: bool):
         if interrupted:
             self.shooter.set_known_setpoint("readied")
+        self.vision.vision_odo_manual(True)

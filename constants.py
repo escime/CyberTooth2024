@@ -116,9 +116,9 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.07  # Will require tuning.
+    turnkP = 0.070  # Will require tuning.
     rangekP = 0.05
-    turn_to_target_error_max = 2  # In degrees.
+    turn_to_target_error_max = 1.5  # In degrees.
     min_command = 0.05  # Should be in volts, will require tuning.
     shooter_default_speed = 4500
     speaker_location_blue = [0, 5.53]
@@ -132,10 +132,10 @@ class ShooterConstants:
     shooter_kFF = 0.000187
     shooter_kP = 0
     shooter_kD = 0
-    angle_kP = 4.1
+    angle_kP = 12  # 4
     feeder_speed = 0.5
     threshold = 500
-    threshold_ang = 0.01
+    threshold_ang = 0.002  # 0.01
     threshold_fired = 30
     trim = -0.007
 

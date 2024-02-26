@@ -61,7 +61,7 @@ class RobotContainer:
         if not tuning_setter:
             self.robot_drive = DriveSubsystem(self.timer)
             self.leds = LEDs(0, 20, 1, 0.03, "GRB", self.timer)
-            self.vision_system = VisionSubsystem(self.timer)
+            self.vision_system = VisionSubsystem(self.timer, self.robot_drive)
             self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
             self.shooter = ShooterSubsystem()
             self.intake = IntakeSubsystem()
@@ -107,7 +107,8 @@ class RobotContainer:
             self.m_chooser = SendableChooser()
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
-                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3"]
+                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
+                               "B_Score4_Fast"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -216,12 +217,12 @@ class RobotContainer:
         # Hold for test shot (temporary lol)
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
         #     commands2.SequentialCommandGroup(
-        #         ReadyShooter(self.shooter, "test"),
-        #         Shoot("readied", True, self.shooter, self.intake, self.trapper)))
+        #         ReadyShooter(self.shooter, "podium", self.timer),
+        #         Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer)))
 
         # Hold to autonomously shoot a NOTE.
         button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-            ShootVisionMod(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
+            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
                         self.leds, self.timer),
             commands2.ParallelCommandGroup(
                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
@@ -340,9 +341,17 @@ class RobotContainer:
         # Temporary control for testing odometry updates during teleop
         # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(commands2.SequentialCommandGroup(
         #     ToggleOdo(self.vision_system),
+        #     commands2.WaitCommand(1),
         #     VisionEstimate(self.vision_system, self.robot_drive),
         #     ToggleOdo(self.vision_system))
         # )
+        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
+        #     ToggleOdo(self.vision_system)
+        # )
+        button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
+            commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive), self.vision_system,
+                                  self.robot_drive)
+        )
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
