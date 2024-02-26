@@ -23,7 +23,7 @@ class DriveSubsystem(commands2.Subsystem):
                                                      SwerveModulePosition(0, Rotation2d(0)),
                                                      SwerveModulePosition(0, Rotation2d(0)),
                                                      SwerveModulePosition(0, Rotation2d(0))),
-                                                    Pose2d(Translation2d(0, 0), Rotation2d(0)))
+                                                    Pose2d(Translation2d(1.31, 5.54), Rotation2d(0)))
 
         # Reset odometry @ instantiation.
         self.gyro.setYaw(180)

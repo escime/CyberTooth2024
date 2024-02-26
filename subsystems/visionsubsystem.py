@@ -301,10 +301,9 @@ class VisionSubsystem(commands2.Subsystem):
             x = drive.get_pose().x - VisionConstants.speaker_location_blue[0]
             y = drive.get_pose().y - VisionConstants.speaker_location_blue[1]
             if y > 0:
-                # TODO FIX THIS MATH! (BLUE ONLY)
-                alpha = 90 - math.degrees(math.atan2(y, x))
+                alpha = 180 + math.degrees(math.atan2(y, x))
             else:
-                alpha = 360 - math.degrees(math.atan2(-y, x))
+                alpha = -1 * (180 + math.degrees(math.atan2(-y, x)))
         else:
             x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
             y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
@@ -321,7 +320,6 @@ class VisionSubsystem(commands2.Subsystem):
             heading = heading + 180
         if self.alpha - VisionConstants.turn_to_target_error_max < heading < \
                 self.alpha + VisionConstants.turn_to_target_error_max:
-            print("ALIGNED!")
             return True
         else:
             return False

@@ -132,15 +132,15 @@ class ShooterConstants:
     shooter_kFF = 0.000187
     shooter_kP = 0
     shooter_kD = 0
-    angle_kP = 4
+    angle_kP = 4.1
     feeder_speed = 0.5
     threshold = 500
-    threshold_ang = 0.008
+    threshold_ang = 0.01
     threshold_fired = 30
-    trim = -0.005
+    trim = -0.007
 
 
 class GlobalVariables:
-    # This really shouldn't go here but I'm trying to fix something really bad
+    # This really shouldn't go here, but I'm trying to fix something really bad. This is also very stupid.
     current_vision = Pose2d(0, 0, 0)
     timestamp = 0

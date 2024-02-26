@@ -1,4 +1,5 @@
 import commands2
+import wpilib.simulation
 from commands2 import button
 
 from constants import OIConstants, DriveConstants
@@ -21,6 +22,7 @@ from commands.flash_LL import FlashLL
 from commands.ready_shooter import ReadyShooter
 from commands.shoot import Shoot
 from commands.shoot_vision import ShootVision
+from commands.shoot_vision_mod import ShootVisionMod
 from commands.score_amp import ScoreAMP
 # from commands.drive_to_note import DriveToNote
 from commands.intake import Intake
@@ -28,6 +30,7 @@ from commands.eject import Eject
 from commands.ready_amp import ReadyAMP
 from commands.switch_channel import SwitchPDHChannel
 from commands.toggle_odo import ToggleOdo
+from commands.vision_estimate import VisionEstimate
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -45,8 +48,12 @@ class RobotContainer:
         self.timer = Timer()
         self.timer.start()
         # TODO Enable when you want to log data. Will Try enabling periodically.
-        # DataLogManager.start()
-        # DriverStation.startDataLog(DataLogManager.getLog(), True)
+        if wpilib.RobotBase.isReal():
+            print("No simulation, starting logging!")
+            DataLogManager.start()
+            DriverStation.startDataLog(DataLogManager.getLog(), True)
+        else:
+            print("Simulated, no logging.")
 
         LiveWindow.disableAllTelemetry()
 
@@ -80,8 +87,8 @@ class RobotContainer:
 
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
                 lambda: self.robot_drive.drive_2ok_clt(
-                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.8,
-                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.8,
+                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
+                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis("RX", 0.06) * -1,
                     5
                 ), self.robot_drive
@@ -100,7 +107,7 @@ class RobotContainer:
             self.m_chooser = SendableChooser()
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
-                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3"]
+                               "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -214,7 +221,7 @@ class RobotContainer:
 
         # Hold to autonomously shoot a NOTE.
         button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
+            ShootVisionMod(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
                         self.leds, self.timer),
             commands2.ParallelCommandGroup(
                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
@@ -311,24 +318,31 @@ class RobotContainer:
         #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(True), self.shooter))
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onFalse(
         #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(False), self.shooter))
-        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
-            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
         button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
-            commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
-                                  self.vision_system, self.robot_drive)
-        )
+            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
+            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
+        #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
+        #                           self.vision_system, self.robot_drive)
+        # )
         # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
         #     commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("subwoofer"), self.shooter))
 
         # button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(ShootLEDs(self.leds, "slow"))
 
-        # Vibrate the driver controller when targets are in view (update later to be "within vision table")
-        # button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
-        #     commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(1)))
-        # button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
-        #     commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
+        # Vibrate the driver controller when targets are in view
+        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
+            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(1)))
+        button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
+            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
+
+        # Temporary control for testing odometry updates during teleop
+        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(commands2.SequentialCommandGroup(
+        #     ToggleOdo(self.vision_system),
+        #     VisionEstimate(self.vision_system, self.robot_drive),
+        #     ToggleOdo(self.vision_system))
+        # )
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.
