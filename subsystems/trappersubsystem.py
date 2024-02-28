@@ -31,11 +31,6 @@ class TrapperSubsystem(commands2.Subsystem):
         self.arm_pid.setP(TrapperConstants.kP)
         self.arm_pid.setOutputRange(-1, 1)
 
-        # Burn all settings to flash memory on the SPARK Maxes.
-        self.trap.burnFlash()
-        self.arm.burnFlash()
-        self.climb.burnFlash()
-
         # Setup NOTE detection sensors.
         self.sensor_bottom = DigitalInput(0)
         self.sensor_top = DigitalInput(1)
@@ -58,6 +53,11 @@ class TrapperSubsystem(commands2.Subsystem):
         # self.mech = Mechanism2d(6, 6)
         # self.mech_root = self.mech.getRoot("core", 3, 3)
         # self.mech_arm = self.mech_root.appendLigament("Arm", 3, -180)
+
+        # Burn all settings to flash memory on the SPARK Maxes.
+        self.trap.burnFlash()
+        self.arm.burnFlash()
+        self.climb.burnFlash()
 
     def get_note_acquired(self) -> bool:
         """Check if the robot has a NOTE in the Trapper."""
@@ -145,7 +145,7 @@ class TrapperSubsystem(commands2.Subsystem):
     def periodic(self) -> None:
         """Any periodic routines for the trapper."""
         # SmartDashboard.putNumber("Arm Position", self.arm_encoder.getPosition())
-        # SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
+        SmartDashboard.putNumber("Climber Position", self.climb_encoder.getPosition())
         if not self.sensor_bottom.get() and not self.sensor_top.get():
             self.note_acquisition_buffer[0] = True
         else:

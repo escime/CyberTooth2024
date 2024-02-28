@@ -44,24 +44,34 @@ class ShootVision(Command):
         #             VisionConstants.turn_to_target_error_max:
         #         self.target_locked = True
 
-        if self.vision.no_sight_range_to_angle(self.drive) != -1:
-            self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
-                                              VisionConstants.shooter_default_speed)
-            self.vision.rotate_to_target_all_locations(self.drive, 0, 0)
-            if self.shooter.get_ready_to_shoot() and (-VisionConstants.turn_to_target_error_max < self.vision.tx <
-                                                      VisionConstants.turn_to_target_error_max or
-                                                      self.vision.get_aligned_odo(self.drive)):
-                # print("TARGET LOCKED!")
-                self.target_locked = True
+        if not self.vision.vision_shot_bypass:
+            if self.vision.no_sight_range_to_angle(self.drive) != -1:
+                self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
+                                                  VisionConstants.shooter_default_speed)
+                self.vision.rotate_to_target_all_locations(self.drive, 0, 0)
+                if self.shooter.get_ready_to_shoot() and (-VisionConstants.turn_to_target_error_max < self.vision.tx <
+                                                          VisionConstants.turn_to_target_error_max or
+                                                          self.vision.get_aligned_odo(self.drive)):
+                    # print("TARGET LOCKED!")
+                    self.target_locked = True
+        else:
+            self.shooter.set_known_setpoint("podium")
+            self.start_time = self.timer.get()
 
     def isFinished(self) -> bool:
-        if not self.bypass_timer:
-            if self.target_locked or self.timer.get() - 2 > self.overrun_time:
-                return True
+        if not self.vision.vision_shot_bypass:
+            if not self.bypass_timer:
+                if self.target_locked or self.timer.get() - 2 > self.overrun_time:
+                    return True
+                else:
+                    return False
             else:
-                return False
+                if self.target_locked:
+                    return True
+                else:
+                    return False
         else:
-            if self.target_locked:
+            if self.shooter.get_ready_to_shoot() or self.timer.get() - 3 > self.start_time:
                 return True
             else:
                 return False

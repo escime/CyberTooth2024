@@ -237,9 +237,9 @@ class RobotContainer:
         button.Trigger(lambda: self.operator_controller_raw.get_button("X")).whileTrue(
             ScoreAMP(self.trapper, self.robot_drive))
 
-        # Hold to drive towards and collect a NOTE.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("B")).whileTrue(
-        #     DriveToNote(self.robot_drive, self.intake, self.vision_system, self.trapper, self.leds))
+        # Press to toggle between auto shooting and manual shooting from the podium
+        button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
+            commands2.cmd.runOnce(lambda: self.vision_system.toggle_vision_shot_bypass(), self.vision_system))
 
         # When a NOTE enters the trapper, flash all LEDs green.
         button.Trigger(lambda: self.trapper.get_note_acquired() and
@@ -309,11 +309,6 @@ class RobotContainer:
         button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
             commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
 
-        # Enable odo in auto.
-        # button.Trigger(lambda: DriverStation.isAutonomous()).onTrue(ToggleOdo(self.vision_system))
-        # button.Trigger(lambda: DriverStation.isAutonomous() and self.vision_system.vision_odo).onFalse(
-        #     ToggleOdo(self.vision_system))
-
         # Temporary controls setup for shooter tuning.
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onTrue(
         #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(True), self.shooter))
@@ -327,10 +322,7 @@ class RobotContainer:
         #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
         #                           self.vision_system, self.robot_drive)
         # )
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("subwoofer"), self.shooter))
 
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(ShootLEDs(self.leds, "slow"))
 
         # Vibrate the driver controller when targets are in view
         button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
@@ -338,16 +330,6 @@ class RobotContainer:
         button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
             commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
 
-        # Temporary control for testing odometry updates during teleop
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(commands2.SequentialCommandGroup(
-        #     ToggleOdo(self.vision_system),
-        #     commands2.WaitCommand(1),
-        #     VisionEstimate(self.vision_system, self.robot_drive),
-        #     ToggleOdo(self.vision_system))
-        # )
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
-        #     ToggleOdo(self.vision_system)
-        # )
         button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
             commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive), self.vision_system,
                                   self.robot_drive)

@@ -95,8 +95,8 @@ class TrapperConstants:
     climb_limit = 60
     trap_speed = 0.5
     amp_speed = 0.4
-    climber_preset = 188
-    climber_preset_2 = 188
+    climber_preset = 270
+    climber_preset_2 = 270
     sport_reduction = 1/16
     sprocket_reduction = 10/46
     neo_resolution = 1/42
@@ -120,7 +120,7 @@ class VisionConstants:
     rangekP = 0.05
     turn_to_target_error_max = 1.5  # In degrees.
     min_command = 0.05  # Should be in volts, will require tuning.
-    shooter_default_speed = 4500
+    shooter_default_speed = 4800  # 4500
     speaker_location_blue = [0, 5.53]
     speaker_location_red = [16.5, 5.53]
 
@@ -132,12 +132,12 @@ class ShooterConstants:
     shooter_kFF = 0.000187
     shooter_kP = 0
     shooter_kD = 0
-    angle_kP = 12  # 4
+    angle_kP = 6  # 4
     feeder_speed = 0.5
-    threshold = 500
-    threshold_ang = 0.002  # 0.01
+    threshold = 400  # 500
+    threshold_ang = 0.003  # 0.01
     threshold_fired = 30
-    trim = -0.007
+    trim = -0.015  # -.01
 
 
 class GlobalVariables:

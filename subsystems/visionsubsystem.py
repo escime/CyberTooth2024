@@ -34,6 +34,7 @@ class VisionSubsystem(commands2.Subsystem):
     vision_odo = True
     target_locked = False
     alpha = 0
+    vision_shot_bypass = False
 
     def __init__(self, timer: Timer, robot_drive: DriveSubsystem) -> None:
         super().__init__()
@@ -163,6 +164,7 @@ class VisionSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
         SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
         SmartDashboard.putNumber("Alpha", self.alpha)
+        SmartDashboard.putBoolean("Vision Targeting Overridden?", self.vision_shot_bypass)
         # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
 
     def toggle_camera(self) -> None:
@@ -275,7 +277,7 @@ class VisionSubsystem(commands2.Subsystem):
         """Calculate shooter speed from range to target."""
         lookup_dist = [65.02, 60.10, 58, 55.07, 50.0]
         # lookup_angle = [0.772, 0.765, 0.756, 0.74]
-        lookup_angle = [0.77, 0.766, 0.76, 0.758, 0.75]
+        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1
@@ -308,16 +310,16 @@ class VisionSubsystem(commands2.Subsystem):
             x = drive.get_pose().x - VisionConstants.speaker_location_blue[0]
             y = drive.get_pose().y - VisionConstants.speaker_location_blue[1]
             if y > 0:
-                alpha = 180 + math.degrees(math.atan2(y, x)) + 2
+                alpha = 180 + math.degrees(math.atan2(y, x))
             else:
-                alpha = -1 * (180 + math.degrees(math.atan2(-y, x))) + 2
+                alpha = -1 * (180 + math.degrees(math.atan2(-y, x)))
         else:
             x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
             y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
             if y > 0:
-                alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180 - 2
+                alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
             else:
-                alpha = math.degrees(math.atan2(-y, -x)) + 180 - 2
+                alpha = math.degrees(math.atan2(-y, -x)) + 180
         self.alpha = alpha
         drive.snap_drive(x_speed, y_speed, alpha)
 
@@ -340,9 +342,8 @@ class VisionSubsystem(commands2.Subsystem):
                              math.pow(drive.get_pose().y - VisionConstants.speaker_location_red[1], 2))
 
     def range_to_angle_m(self, drive: DriveSubsystem) -> float:
-        # TODO TUNE
         lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
-        lookup_angle = [0.77, 0.766, 0.76, 0.758, 0.75]
+        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
             solution = -1
             for x in range(0, len(lookup_dist) - 1):
@@ -356,3 +357,9 @@ class VisionSubsystem(commands2.Subsystem):
 
     def for_testing_no_viz(self, drive: DriveSubsystem) -> None:
         print("Calculated Range from Speaker" + str(self.range_to_speaker_odo(drive)))
+
+    def toggle_vision_shot_bypass(self):
+        if self.vision_shot_bypass:
+            self.vision_shot_bypass = False
+        else:
+            self.vision_shot_bypass = True
