@@ -6,10 +6,12 @@ from wpimath.estimator import SwerveDrive4PoseEstimator
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from wpimath.controller import PIDController
 from subsystems.swervemodule import SwerveModule
-from constants import DriveConstants, ModuleConstants, AutoConstants, GlobalVariables
+from constants import DriveConstants, ModuleConstants, AutoConstants
 from wpilib import SmartDashboard, Field2d, Timer, DriverStation
 from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.config import HolonomicPathFollowerConfig, ReplanningConfig, PIDConstants
+from pathplannerlib.path import PathPlannerPath, PathConstraints, GoalEndState
+from pathplannerlib.commands import FollowPathHolonomic
 
 
 class DriveSubsystem(commands2.Subsystem):
@@ -265,7 +267,7 @@ class DriveSubsystem(commands2.Subsystem):
         # SmartDashboard.putNumber("Robot Heading", self.get_heading())
         # SmartDashboard.putNumber("Robot Pitch", self.gyro.getRoll())
         # SmartDashboard.putBoolean("Balanced?", self.balanced)
-        # SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
+        SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
 
         if self.debug_mode is True:
             SmartDashboard.putNumber("FL Angle", self.m_FL.get_state().angle.degrees())
@@ -387,3 +389,30 @@ class DriveSubsystem(commands2.Subsystem):
             return True
         else:
             return False
+
+    def follow_path_command(self, target_location: [], end_rotation: float) -> FollowPathHolonomic:
+        bezier_points = PathPlannerPath.bezierFromPoses([
+            self.get_pose(),
+            Pose2d(target_location[0], target_location[1], Rotation2d.fromDegrees(target_location[2]))])
+
+        path = PathPlannerPath(
+            bezier_points,
+            PathConstraints(1, 1, 2 * 3.14159, 4 * 3.14159),
+            GoalEndState(0, Rotation2d.fromDegrees(end_rotation))
+        )
+
+        return FollowPathHolonomic(
+            path,
+            self.get_pose,
+            self.get_chassis_speeds,
+            self.drive_by_chassis_speeds,
+            HolonomicPathFollowerConfig(
+                PIDConstants(AutoConstants.kPXController, 0, 0),
+                PIDConstants(AutoConstants.kPThetaController, 0, 0),
+                AutoConstants.max_module_speed,
+                AutoConstants.module_radius_from_center,
+                ReplanningConfig()
+            ),
+            self.get_path_flip,
+            self
+        )

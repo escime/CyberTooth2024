@@ -103,7 +103,7 @@ class TrapperSubsystem(commands2.Subsystem):
         self.climb.set(speed)
 
     def manual_arm(self, speed: float) -> None:
-        if self.arm_encoder.getPosition() > self.setpoints["trap"] and speed > 0:
+        if self.arm_encoder.getPosition() > (self.setpoints["trap"] + 1) and speed > 0:
             self.arm.set(0)
         elif self.arm_encoder.getPosition() < 0 and speed < 0:
             self.arm.set(0)

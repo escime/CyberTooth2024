@@ -8,7 +8,7 @@ class ShooterSubsystem(commands2.Subsystem):
 
     shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.705, "podium": 0.765, "readied": 0.75, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.705, "podium": 0.765, "readied": 0.79, "test": 0.772}
 
     def __init__(self) -> None:
         super().__init__()
@@ -36,6 +36,7 @@ class ShooterSubsystem(commands2.Subsystem):
         self.encoder.setZeroOffset(0.554 + 0.1)
         self.angle_pid.setFeedbackDevice(self.encoder)
         self.angle_pid.setP(ShooterConstants.angle_kP)
+        self.angle_pid.setI(ShooterConstants.angle_kI)
         self.angle_pid.setOutputRange(-0.8, 0.8)
         self.angle_pid.setPositionPIDWrappingEnabled(True)
 
@@ -71,7 +72,7 @@ class ShooterSubsystem(commands2.Subsystem):
     def get_at_speed(self) -> bool:
         """Check up shooter is at the targeted speed."""
         if self.shooter_setpoint - \
-                ShooterConstants.threshold <= self.shooter_encoder_top.getVelocity() <= self.shooter_setpoint + \
+                ShooterConstants.threshold <= self.shooter_encoder_top.getVelocity() < self.shooter_setpoint + \
                 ShooterConstants.threshold:
             return True
         elif self.shooter_setpoint == 0:
@@ -142,10 +143,12 @@ class ShooterSubsystem(commands2.Subsystem):
         # SmartDashboard.putNumber("Top Shooter Speed", self.shooter_encoder_top.getVelocity())
         # SmartDashboard.putNumber("Bottom Shooter Speed", self.shooter_encoder_bottom.getVelocity())
         # SmartDashboard.putNumber("Target Shooter Speed", self.shooter_setpoint)
-        SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
-        SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
+        # SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
+        # SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
         SmartDashboard.putNumber("Current Trim", self.trim)
         SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
+        # SmartDashboard.putNumber("Lower Bound", self.shooter_setpoint - ShooterConstants.threshold)
+        # SmartDashboard.putNumber("Upper Bound", self.shooter_setpoint + ShooterConstants.threshold)
 
     def tuning_toggler(self, on: bool) -> None:
         if on:

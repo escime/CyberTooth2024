@@ -72,16 +72,16 @@ class VisionSubsystem(commands2.Subsystem):
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
         self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)
-        self.json_val = self.limelight_table.getEntry("json").getString("0")  # Grab the entire json pull as a string.
-        first_index = str(self.json_val).find("\"ts\"")  # Locate the first string index for timestamp.
-        adjusted_json = str(self.json_val)[first_index + 5:]  # Substring the JSON to remove everything before timestamp
-        timestamp_str = adjusted_json[:adjusted_json.find(",")]  # Substring out the timestamp.
-        try:
-            self.timestamp = float(timestamp_str)  # Update timestamp if JSON parse is successful.
-        except ValueError:
-            self.timestamp = -1
+        # self.json_val = self.limelight_table.getEntry("json").getString("0")  # Grab the entire json pull as a string.
+        # first_index = str(self.json_val).find("\"ts\"")  # Locate the first string index for timestamp.
+        # adjusted_json = str(self.json_val)[first_index + 5:]  # Substring the JSON to remove everything before timestamp
+        # timestamp_str = adjusted_json[:adjusted_json.find(",")]  # Substring out the timestamp.
+        # try:
+        #     self.timestamp = float(timestamp_str)  # Update timestamp if JSON parse is successful.
+        # except ValueError:
+        #     self.timestamp = -1
         # Calculate latency based on Limelight Timestamp.
-        self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
+        # self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
 
     def update_values_safe(self):
         """Update relevant values from LL NT to robot variables."""
@@ -108,11 +108,12 @@ class VisionSubsystem(commands2.Subsystem):
 
     def vision_estimate_pose(self) -> Pose2d:
         """Returns limelight estimated robot pose."""
-        botpose = self.limelight_table.getEntry("botpose_wpiblue").getDoubleArray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        botpose = self.limelight_table.getEntry("botpose_wpiblue").getDoubleArray([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
         bot_x = botpose[0]
         bot_y = botpose[1]
         rotation_z = (botpose[5] + 360) % 360
+        self.timestamp = self.timer.getFPGATimestamp() - (botpose[6] / 1000.0)
 
         return Pose2d(Translation2d(bot_x, bot_y), Rotation2d.fromDegrees(rotation_z))
 
@@ -137,7 +138,7 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
             if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
-            if self.timer.get() - 0.5 > self.record_time:  # If it's been 0.5s since last update,
+            if self.timer.get() - 0.25 > self.record_time:  # If it's been 0.5s since last update,
                 self.update_values()  # Update limelight values.
                 if self.has_targets():  # If an AprilTag is visible,
                     # GlobalVariables.current_vision = self.vision_estimate_pose()  # Estimate pose from vision.

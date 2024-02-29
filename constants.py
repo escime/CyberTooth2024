@@ -129,12 +129,13 @@ class ShooterConstants:
     top_id = 34
     bottom_id = 33
     current_limit = 38
-    shooter_kFF = 0.000187
-    shooter_kP = 0
+    shooter_kFF = 0.000172
+    shooter_kP = 0.0001
     shooter_kD = 0
     angle_kP = 6  # 4
+    angle_kI = 0.00015
     feeder_speed = 0.5
-    threshold = 400  # 500
+    threshold = 100  # 500
     threshold_ang = 0.003  # 0.01
     threshold_fired = 30
     trim = -0.015  # -.01
