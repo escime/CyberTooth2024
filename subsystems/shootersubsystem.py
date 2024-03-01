@@ -8,7 +8,7 @@ class ShooterSubsystem(commands2.Subsystem):
 
     shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.705, "podium": 0.765, "readied": 0.79, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.765, "readied": 0.79, "test": 0.772}
 
     def __init__(self) -> None:
         super().__init__()

@@ -52,7 +52,7 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.75
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 3  # Previously 12
+    kPXController = 2.8  # Previously 12
     kPThetaController = 5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
@@ -135,10 +135,10 @@ class ShooterConstants:
     angle_kP = 6  # 4
     angle_kI = 0.00015
     feeder_speed = 0.5
-    threshold = 100  # 500
-    threshold_ang = 0.003  # 0.01
+    threshold = 200  # 500
+    threshold_ang = 0.004  # 0.01
     threshold_fired = 30
-    trim = -0.015  # -.01
+    trim = -0.013
 
 
 class GlobalVariables:

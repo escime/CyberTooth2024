@@ -38,7 +38,7 @@ class Shoot(Command):
 
     def isFinished(self) -> bool:
         if not self.bypass_timeout:
-            if self.timer.get() - 3 > self.start_time or self.timer.get() - 1.25 > self.start_2:
+            if self.timer.get() - 2 > self.start_time or self.timer.get() - 1.25 > self.start_2:
                 self.start_time = 0
                 self.start_2 = 1000
                 return True

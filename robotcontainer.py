@@ -178,24 +178,24 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 0
             ), self.robot_drive))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-        #         60
-        #     ), self.robot_drive))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("X")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-        #         300
-        #     ), self.robot_drive))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                60
+            ), self.robot_drive))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                300
+            ), self.robot_drive))
 
         # When pressing the underside triggers, automatically drive the robot to the correct position under the stage
-        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
-            self.robot_drive.follow_path_command([4.68, 3.76, -120], -120))
-        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).whileTrue(
-            self.robot_drive.follow_path_command([4.7, 4.3, 120], 120))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("X")).whileTrue(
+        #     self.robot_drive.follow_path_command([4.68, 3.76, -120], -120))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("A")).whileTrue(
+        #     self.robot_drive.follow_path_command([4.7, 4.3, 120], 120))
 
         # Reset robot pose to center of the field.
         button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
