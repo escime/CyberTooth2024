@@ -31,7 +31,8 @@ class DriveConstants:
     m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
-    snap_controller_PID = [0.05, 0, 0]
+    snap_controller_PID = [0.05, 0, 0]  # 0.05
+    turret_controller_PID = [0.1, 0.001, 0.01]
     clt_controller_PID = [1, 0, 0]
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
@@ -52,7 +53,8 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.75
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 2.8  # Previously 12
+    kPXController = 2.5  # Previously 12
+    kDXController = 0
     kPThetaController = 5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
@@ -116,10 +118,12 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.070  # Will require tuning.
+    turnkP = 0.1  # Will require tuning. #0.08
+    turnkI = 0
+    turnkD = 0.01
     rangekP = 0.05
-    turn_to_target_error_max = 1.5  # In degrees.
-    min_command = 0.05  # Should be in volts, will require tuning.
+    turn_to_target_error_max = 1  # In degrees.
+    min_command = 0.03  # Should be in volts, will require tuning.
     shooter_default_speed = 4800  # 4500
     speaker_location_blue = [0, 5.53]
     speaker_location_red = [16.5, 5.53]
@@ -138,7 +142,7 @@ class ShooterConstants:
     threshold = 200  # 500
     threshold_ang = 0.004  # 0.01
     threshold_fired = 30
-    trim = -0.013
+    trim = 0.018
 
 
 class GlobalVariables:

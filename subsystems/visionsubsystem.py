@@ -28,8 +28,9 @@ class VisionSubsystem(commands2.Subsystem):
     pov = "back"
     auto_cam_swap = True
     calc_override = False
-    turn_to_target_controller = PIDController(VisionConstants.turnkP, 0, 0)
+    turn_to_target_controller = PIDController(VisionConstants.turnkP, VisionConstants.turnkI, VisionConstants.turnkD)
     approach_target_controller = PIDController(VisionConstants.rangekP, 0, 0)
+    shoot_while_move_controller = PIDController(0.2, 0, 0)
     pipeline_id = 0
     vision_odo = True
     target_locked = False
@@ -138,16 +139,14 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
             if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
-            if self.timer.get() - 0.25 > self.record_time:  # If it's been 0.5s since last update,
+            if self.timer.get() - 0.1 > self.record_time:  # If it's been 0.5s since last update,
                 self.update_values()  # Update limelight values.
                 if self.has_targets():  # If an AprilTag is visible,
-                    # GlobalVariables.current_vision = self.vision_estimate_pose()  # Estimate pose from vision.
-                    # GlobalVariables.timestamp = self.latency
                     vision_estimate = self.vision_estimate_pose()
                     current_position = self.robot_drive.get_pose()
-                    if abs(current_position.x - vision_estimate.x) < 3 and \
-                            abs(current_position.y - vision_estimate.y) < 3:  # Check if poses are within 1m.
-                        self.robot_drive.add_vision(vision_estimate, self.latency)  # Add vision to kalman filter.
+                    if abs(current_position.x - vision_estimate.x) < 5 and \
+                            abs(current_position.y - vision_estimate.y) < 5:  # Check if poses are within 10m.
+                        self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -328,8 +327,11 @@ class VisionSubsystem(commands2.Subsystem):
         heading = drive.get_heading_odo().degrees()
         if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
             heading = heading + 180
-        if self.alpha - VisionConstants.turn_to_target_error_max < heading < \
-                self.alpha + VisionConstants.turn_to_target_error_max:
+        # print("Alpha Min: " + str(self.alpha - VisionConstants.turn_to_target_error_max))
+        # print("Alpha Max: " + str(self.alpha + VisionConstants.turn_to_target_error_max))
+        # print("Heading: " + str(heading))
+        if self.alpha - 2 < heading < \
+                self.alpha + 2:
             return True
         else:
             return False
@@ -364,3 +366,36 @@ class VisionSubsystem(commands2.Subsystem):
             self.vision_shot_bypass = False
         else:
             self.vision_shot_bypass = True
+
+    def range_to_angle_rand(self, dist: float) -> float:
+        lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
+        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        if lookup_dist[-1] <= dist <= lookup_dist[0]:
+            solution = -1
+            for x in range(0, len(lookup_dist) - 1):
+                if lookup_dist[x + 1] <= dist < lookup_dist[x]:
+                    m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                    b = lookup_angle[x] - (m * lookup_dist[x])
+                    solution = (m * dist) + b
+            return solution
+        else:
+            return -1
+
+    def align_to_speaker_turret(self, x_speed, y_speed, drive: DriveSubsystem) -> None:
+        """Intended to align robot to speaker even when the speaker is not in sight."""
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            x = drive.get_pose().x - VisionConstants.speaker_location_blue[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_blue[1]
+            if y > 0:
+                alpha = 180 + math.degrees(math.atan2(y, x))
+            else:
+                alpha = -1 * (180 + math.degrees(math.atan2(-y, x)))
+        else:
+            x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
+            y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
+            if y > 0:
+                alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
+            else:
+                alpha = math.degrees(math.atan2(-y, -x)) + 180
+        self.alpha = alpha
+        drive.turret_drive(x_speed, y_speed, alpha)

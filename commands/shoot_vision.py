@@ -49,10 +49,11 @@ class ShootVision(Command):
                 self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
                                                   VisionConstants.shooter_default_speed)
                 self.vision.rotate_to_target_all_locations(self.drive, 0, 0)
-                if self.shooter.get_ready_to_shoot() and (-VisionConstants.turn_to_target_error_max < self.vision.tx <
-                                                          VisionConstants.turn_to_target_error_max or
+                if self.shooter.get_ready_to_shoot() and ((-VisionConstants.turn_to_target_error_max < self.vision.tx <
+                                                          VisionConstants.turn_to_target_error_max and
+                                                           self.vision.tx != -1) or
                                                           self.vision.get_aligned_odo(self.drive)):
-                    # print("TARGET LOCKED!")
+                    print("TARGET LOCKED!")
                     self.target_locked = True
         else:
             self.shooter.set_known_setpoint("podium")

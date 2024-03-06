@@ -6,7 +6,7 @@ from wpilib import DigitalInput, SmartDashboard
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 8.3, "trap": 20.27, "amp": 9, "stow": 0}
+    setpoints = {"stage": 8.3, "trap": 20.5, "amp": 9, "stow": 0}
 
     def __init__(self) -> None:
         super().__init__()
@@ -48,11 +48,16 @@ class TrapperSubsystem(commands2.Subsystem):
         # Tell robot it's not climbing
         self.is_climbing = False
 
-        self.note_acquisition_buffer = [False] * 10
+        self.note_acquisition_buffer = [False] * 7
 
         # self.mech = Mechanism2d(6, 6)
         # self.mech_root = self.mech.getRoot("core", 3, 3)
         # self.mech_arm = self.mech_root.appendLigament("Arm", 3, -180)
+
+        # TODO test if this actually decreases CAN utilization
+        self.trap.setControlFramePeriodMs(60)
+        self.arm.setControlFramePeriodMs(60)
+        self.climb.setControlFramePeriodMs(60)
 
         # Burn all settings to flash memory on the SPARK Maxes.
         self.trap.burnFlash()
@@ -117,7 +122,7 @@ class TrapperSubsystem(commands2.Subsystem):
         self.arm_pid.setReference(self.arm_encoder.getPosition(), CANSparkMax.ControlType.kPosition)
 
     def check_arm_position(self):
-        if abs(self.arm_encoder.getPosition() - self.setpoints[self.arm_setpoint]) < 0.2:
+        if abs(self.arm_encoder.getPosition() - self.setpoints[self.arm_setpoint]) < 0.1:
             return True
         else:
             return False
@@ -127,7 +132,7 @@ class TrapperSubsystem(commands2.Subsystem):
         self.is_climbing = True
         if self.arm_setpoint != "stage":
             self.set_arm("stage")
-        if self.climb_encoder.getPosition() < TrapperConstants.climber_preset and self.check_arm_position():
+        if self.climb_encoder.getPosition() < TrapperConstants.climber_preset:
             self.run_climb(1)
         else:
             self.run_climb(0)

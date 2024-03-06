@@ -1,3 +1,5 @@
+import math
+
 from rev import CANSparkMax
 from phoenix5.sensors import CANCoder, Pigeon2
 import commands2
@@ -35,6 +37,11 @@ class DriveSubsystem(commands2.Subsystem):
                                              DriveConstants.snap_controller_PID[1],
                                              DriveConstants.snap_controller_PID[2])
         self.snap_controller.enableContinuousInput(-180, 180)
+
+        self.turret_controller = PIDController(DriveConstants.turret_controller_PID[0],
+                                               DriveConstants.turret_controller_PID[1],
+                                               DriveConstants.turret_controller_PID[2])
+        self.turret_controller.enableContinuousInput(-180, 180)
 
         # Setup closed-loop-turning controller
         self.clt_controller = PIDController(DriveConstants.clt_controller_PID[0],
@@ -91,7 +98,7 @@ class DriveSubsystem(commands2.Subsystem):
             self.get_chassis_speeds,
             self.drive_by_chassis_speeds,
             HolonomicPathFollowerConfig(
-                PIDConstants(AutoConstants.kPXController, 0, 0),
+                PIDConstants(AutoConstants.kPXController, 0, AutoConstants.kDXController),
                 PIDConstants(AutoConstants.kPThetaController, 0, 0),
                 AutoConstants.max_module_speed,
                 AutoConstants.module_radius_from_center,
@@ -108,6 +115,19 @@ class DriveSubsystem(commands2.Subsystem):
         self.period_update_time = self.timer.get()
         self.current_time = self.timer.get()
 
+        # Setup for shoot while moving calculations
+        self.loop_time = self.timer.get()
+        self.vx_old = 0
+        self.vy_old = 0
+        self.omega_old = 0
+        self.vx_new = 0
+        self.vy_new = 0
+        self.omega_new = 0
+        self.ax = 0
+        self.ay = 0
+        self.alpha = 0
+
+        # Configuration for kalman filter confidence
         self.m_odometry.setVisionMeasurementStdDevs((0.7, 0.7, 999999999))
 
     # Create Field2d object to display/track robot position.
@@ -245,6 +265,16 @@ class DriveSubsystem(commands2.Subsystem):
                                 self.m_BL.get_position(),
                                 self.m_BR.get_position()))
         self.m_field.setRobotPose(self.get_pose())
+
+        # TODO Remove this math if not using "shoot while moving"
+        self.vx_new, self.vy_new, self.omega_new = self.get_field_relative_velocity()
+        self.ax, self.ay, self.alpha = self.get_field_relative_acceleration([self.vx_new, self.vy_new, self.omega_new],
+                                                                            [self.vx_old, self.vy_old, self.omega_old],
+                                                                            self.timer.get() - self.loop_time)
+        self.vx_old = self.vx_new
+        self.vy_old = self.vy_new
+        self.omega_old = self.omega_new
+        self.loop_time = self.timer.get()
 
         if self.timer.get() - 0.5 > self.period_update_time:
             if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
@@ -416,3 +446,36 @@ class DriveSubsystem(commands2.Subsystem):
             self.get_path_flip,
             self
         )
+
+    def get_field_relative_velocity(self):
+        return self.get_chassis_speeds().vx * self.get_heading_odo().cos() - \
+               self.get_chassis_speeds().vy * self.get_heading_odo().sin(), \
+               self.get_chassis_speeds().vy * self.get_heading_odo().cos() + \
+               self.get_chassis_speeds().vx * self.get_heading_odo().sin(), self.get_chassis_speeds().omega
+
+    def get_field_relative_acceleration(self, new_speed, old_speed, time: float):
+        ax = (new_speed[0] - old_speed[0]) / time
+        ay = (new_speed[1] - old_speed[1]) / time
+        alpha = (new_speed[2] - old_speed[2]) / time
+
+        if abs(ax) > 6.0:
+            ax = 6.0 * math.copysign(1, ax)
+        if abs(ay) > 6.0:
+            ay = 6.0 * math.copysign(1, ay)
+        if abs(alpha) > 4 * math.pi:
+            alpha = 4 * math.pi * math.copysign(1, alpha)
+
+        return ax, ay, alpha
+
+    def turret_drive(self, x_speed: float, y_speed: float, heading_target: float):
+        """
+        Calculate and implement the PID controller for rotating to and maintaining a target heading.
+        x_speed: Float, -max_speed to +max_speed.
+        y_speed: Float, -max_speed to +max_speed.
+        heading_target: Float, degree target angle.
+        """
+        current_heading = self.get_heading_odo().degrees()
+        if self.blue_alliance:
+            heading_target = heading_target + 180
+        rotate_output = self.turret_controller.calculate(heading_target, current_heading)
+        self.drive_2ok(x_speed, y_speed, rotate_output, True)

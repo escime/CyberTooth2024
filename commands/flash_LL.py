@@ -20,7 +20,7 @@ class FlashLL(Command):
         self.leds.flash_color([255, 0, 0], 2)
 
     def isFinished(self) -> bool:
-        if self.viz.timer.get() - 1 > self.start_time:
+        if self.viz.timer.get() - 2 > self.start_time:
             return True
         else:
             return False

@@ -21,6 +21,3 @@ class ReadyShooter(Command):
             return True
         else:
             return False
-
-    def end(self, interrupted: bool):
-        print("ReadyShooter complete.")

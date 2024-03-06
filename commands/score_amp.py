@@ -24,5 +24,12 @@ class ScoreAMP(Command):
             else:
                 self.trapper.score_in_amp(False)
 
+    def isFinished(self) -> bool:
+        if self.trapper.sensor_top.get() and self.trapper.sensor_bottom.get():
+            return True
+        else:
+            return False
+
     def end(self, interrupted: bool):
-        self.trapper.stow()
+        if not interrupted:
+            self.trapper.stow()

@@ -31,6 +31,11 @@ from commands.ready_amp import ReadyAMP
 from commands.switch_channel import SwitchPDHChannel
 from commands.toggle_odo import ToggleOdo
 from commands.vision_estimate import VisionEstimate
+from commands.alert_gp_leds import AlertGPLEDs
+from commands.climb_s1 import ClimbS1
+from commands.climb_s2 import ClimbS2
+from commands.maintain_shooter import MaintainShooter
+from commands.shoot_while_moving import ShootVisionWhileMoving
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -47,7 +52,6 @@ class RobotContainer:
         tuning_setter = False
         self.timer = Timer()
         self.timer.start()
-        # TODO Enable when you want to log data. Will Try enabling periodically.
         if wpilib.RobotBase.isReal():
             print("No simulation, starting logging!")
             DataLogManager.start()
@@ -74,23 +78,12 @@ class RobotContainer:
 
         # Perform setup as normal, unless tuning mode is enabled.
         if not tuning_setter:
-            # Set the default drive command.
-            # self.robot_drive.setDefaultCommand(commands2.cmd.run(
-            #     lambda: self.robot_drive.drive_2ok(
-            #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-            #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-            #         self.driver_controller_raw.get_axis("RX", 0.06) *
-            #         DriveConstants.kMaxAngularSpeed,
-            #         True),
-            #     self.robot_drive
-            # ))
-
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
                 lambda: self.robot_drive.drive_2ok_clt(
                     self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis("RX", 0.06) * -1,
-                    5
+                    10
                 ), self.robot_drive
             ))
 
@@ -108,7 +101,7 @@ class RobotContainer:
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
-                               "B_Score4_Fast"]
+                               "B_Score4_Fast", "B_Score4_Fastest"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -141,8 +134,13 @@ class RobotContainer:
     def configureTriggersDefault(self) -> None:
         """Used to set up any commands that trigger when a measured event occurs."""
         # Hold for Parking Brake.
-        button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
-            commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))
+        # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
+        #     commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))
+
+        # TODO Enable this code to see if it... works
+        button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
+                ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
+                                       self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.2))
 
         # Hold for Slow Mode, variable based on depth of Trigger.
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.05)).whileTrue(
@@ -250,7 +248,9 @@ class RobotContainer:
         # When a NOTE enters the trapper, flash all LEDs green.
         button.Trigger(lambda: self.trapper.get_note_acquired() and
                        (DriverStation.isTeleopEnabled() or
-                       DriverStation.isDisabled())).onTrue(FlashLL(self.vision_system, self.leds))
+                       DriverStation.isDisabled())).onTrue(commands2.SequentialCommandGroup(
+                        FlashLL(self.vision_system, self.leds),
+                        AlertGPLEDs(self.leds, self.trapper)))
 
         # Start an AMPLIFICATION timer.
         button.Trigger(lambda: self.operator_controller_raw.get_button("MENU")).onTrue(AmpLEDs(self.leds))
@@ -260,10 +260,11 @@ class RobotContainer:
         button.Trigger(lambda: DriverStation.isEnabled()).onFalse(SwitchPDHChannel(False, self.utilsys))
 
         # Manually control the arm.
-        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1) and
-                       self.shooter.angle_setpoint == self.shooter.angle_setpoints["stow"]).whileTrue(
-            commands2.cmd.run(lambda: self.trapper.manual_arm(self.operator_controller_raw.get_axis("RY", 0.1) * -1),
-                              self.trapper))
+        button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).whileTrue(
+            commands2.cmd.SequentialCommandGroup(
+                commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter),
+                commands2.cmd.run(lambda: self.trapper.manual_arm(self.operator_controller_raw.get_axis("RY", 0.1) * -1),
+                                  self.trapper)))
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("RY", 0.1)).onFalse(
             commands2.cmd.runOnce(lambda: self.trapper.manual_arm_off(), self.trapper))
 
@@ -302,18 +303,20 @@ class RobotContainer:
         button.Trigger(lambda: self.operator_controller_raw.get_button("B")).onTrue(
             commands2.SequentialCommandGroup(
                 ReadyShooter(self.shooter, "stow", self.timer),
-                commands2.cmd.run(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
+                ClimbS1(self.trapper, self.leds)))
+        # commands2.cmd.run(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
 
         # Press to preset for climbing.
         button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
-            commands2.ParallelCommandGroup(
-                commands2.cmd.run(lambda: self.trapper.set_climb_stage_2(), self.trapper),
-                commands2.cmd.run(lambda: self.robot_drive.drive_2ok(0.05 * DriveConstants.kMaxSpeed, 0, 0, False),
-                                  self.robot_drive)))
+             ClimbS2(self.trapper, self.leds, self.robot_drive))
+        # commands2.ParallelCommandGroup(
+        #     commands2.cmd.run(lambda: self.trapper.set_climb_stage_2(), self.trapper),
+        #     commands2.cmd.run(lambda: self.robot_drive.drive_2ok(0.05 * DriveConstants.kMaxSpeed, 0, 0, False),
+        #                       self.robot_drive)))
 
         # If climbing, set the leds to rainbow!
-        button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
-            commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+        # button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
+        #     commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
 
         # Temporary controls setup for shooter tuning.
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onTrue(
@@ -322,13 +325,14 @@ class RobotContainer:
         #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(False), self.shooter))
         button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
             commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter))
-        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).onTrue(
-            commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).toggleOnTrue(
+        #     commands2.cmd.run(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).toggleOnTrue(
+            MaintainShooter(self.shooter, self.robot_drive, self.vision_system))
         # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
         #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
         #                           self.vision_system, self.robot_drive)
         # )
-
 
         # Vibrate the driver controller when targets are in view
         button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
@@ -388,3 +392,5 @@ class RobotContainer:
                                       commands2.cmd.run(lambda: self.leds.flash_color([225, 255, 0], 2), self.leds))
         NamedCommands.registerCommand("flash_purple",
                                       commands2.cmd.run(lambda: self.leds.flash_color([50, 149, 168], 2), self.leds))
+        NamedCommands.registerCommand("maintain_shooter", MaintainShooter(self.shooter, self.robot_drive,
+                                                                          self.vision_system))

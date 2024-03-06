@@ -8,7 +8,8 @@ class ShooterSubsystem(commands2.Subsystem):
 
     shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.765, "readied": 0.79, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.700, "podium": 0.765, "readied": 0.79, "test": 0.772}
+    # previous subwoofer 0.710
 
     def __init__(self) -> None:
         super().__init__()
@@ -51,6 +52,8 @@ class ShooterSubsystem(commands2.Subsystem):
         self.shooter_setpoint = 0
         self.angle_setpoint = self.angle_setpoints["stow"]
         self.trim = ShooterConstants.trim
+
+        self.default_bypass = False
 
     def shoot(self) -> None:
         """Advance Note into shooter wheels."""
@@ -109,12 +112,12 @@ class ShooterSubsystem(commands2.Subsystem):
 
     def set_angle(self, angle: float) -> None:
         """Set the angle of the shooter."""
-        if angle != self.angle_setpoints["stow"]:
-            self.angle_setpoint = angle + self.trim
-            self.angle_pid.setReference(angle + self.trim, CANSparkMax.ControlType.kPosition)
-        else:
-            self.angle_setpoint = angle
-            self.angle_pid.setReference(angle, CANSparkMax.ControlType.kPosition)
+        # if angle != self.angle_setpoints["stow"]:
+        self.angle_setpoint = angle + self.trim
+        self.angle_pid.setReference(angle + self.trim, CANSparkMax.ControlType.kPosition)
+        # else:
+        #     self.angle_setpoint = angle
+        #     self.angle_pid.setReference(angle, CANSparkMax.ControlType.kPosition)
 
     def set_known_setpoint(self, setpoint: str) -> None:
         """Set the shooter to a known state."""

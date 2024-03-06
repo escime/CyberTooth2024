@@ -76,6 +76,11 @@ class LEDs(commands2.SubsystemBase):
         for i in range(0, self.length - 5):
             self.purple_pattern.append(AddressableLED.LEDData(0, 0, 0))
 
+        # Setup green chase effect
+        self.green_pattern = [AddressableLED.LEDData(255, 0, 0)] * 10
+        for i in range(0, self.length - 10):
+            self.green_pattern.append(AddressableLED.LEDData(50, 149, 168))
+
         # Setup shoot animation default
         # self.shoot_pattern = [AddressableLED.LEDData(0, 0, 0)] * (self.length - 5)
         # for i in range(0, 5):
@@ -283,4 +288,12 @@ class LEDs(commands2.SubsystemBase):
             self.amp_pattern_displayed = [AddressableLED.LEDData(0, 255, 0)] * (self.length - (self.amp_length * 2))
             for i in range(0, self.amp_length * 2):
                 self.amp_pattern_displayed.append(AddressableLED.LEDData(0, 0, 0))
+        self.set_chain()
+
+    def green_chaser(self) -> None:
+        """Configure the LED code for a purple and green chaser signifying that the robot has a game piece."""
+        if self.timer.get() - self.animation_delay > self.record_time:
+            self.m_ledBuffer = self.green_pattern
+            self.green_pattern = self.green_pattern[1:] + self.green_pattern[:1]
+            self.record_time = self.timer.get()
         self.set_chain()
