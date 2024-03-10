@@ -27,7 +27,7 @@ class Intake(Command):
 
     def isFinished(self) -> bool:
         if not self.bypass:
-            if self.trapper.get_note_acquired() or (self.timer.get() - 5 > self.start_time):
+            if self.trapper.get_note_acquired() or (self.timer.get() - 4 > self.start_time):
                 return True
             else:
                 return False

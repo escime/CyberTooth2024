@@ -29,6 +29,7 @@ class ShootVision(Command):
         self.start_time = 10000
         self.overrun_time = self.timer.get()
         self.target_locked = False
+        self.ready_buffer = [False] * 8
 
     def initialize(self):
         self.vision.vision_odo_manual(False)
@@ -53,6 +54,11 @@ class ShootVision(Command):
                                                           VisionConstants.turn_to_target_error_max and
                                                            self.vision.tx != -1) or
                                                           self.vision.get_aligned_odo(self.drive)):
+                    self.ready_buffer[0] = True
+                else:
+                    self.ready_buffer[0] = False
+                self.ready_buffer = self.ready_buffer[1:] + self.ready_buffer[:1]
+                if all(self.ready_buffer):
                     print("TARGET LOCKED!")
                     self.target_locked = True
         else:

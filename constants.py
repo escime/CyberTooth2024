@@ -32,7 +32,7 @@ class DriveConstants:
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
     snap_controller_PID = [0.05, 0, 0]  # 0.05
-    turret_controller_PID = [0.1, 0.001, 0.01]
+    turret_controller_PID = [0.08, 0, 0]
     clt_controller_PID = [1, 0, 0]
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
@@ -50,12 +50,12 @@ class DriveConstants:
 
 
 class AutoConstants:
-    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.75
+    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.9
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 2.5  # Previously 12
+    kPXController = 6  # Previously 12
     kDXController = 0
-    kPThetaController = 5  # Previously 10
+    kPThetaController = 3.5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond
@@ -115,16 +115,17 @@ class IntakeConstants:
 
 class VisionConstants:
     rotation_from_horizontal = 30.5  # In degrees.
+    # rotation_from_horizontal = 45  # TODO Correct here and in the limelight GUI
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.1  # Will require tuning. #0.08
+    turnkP = 0.07  # Will require tuning. #0.1
     turnkI = 0
-    turnkD = 0.01
+    turnkD = 0.5  # was 0.01
     rangekP = 0.05
-    turn_to_target_error_max = 1  # In degrees.
-    min_command = 0.03  # Should be in volts, will require tuning.
-    shooter_default_speed = 4800  # 4500
+    turn_to_target_error_max = 2  # In degrees.
+    min_command = 0.0  # Should be in volts, will require tuning.
+    shooter_default_speed = 5300  # 4500
     speaker_location_blue = [0, 5.53]
     speaker_location_red = [16.5, 5.53]
 
@@ -136,13 +137,13 @@ class ShooterConstants:
     shooter_kFF = 0.000172
     shooter_kP = 0.0001
     shooter_kD = 0
-    angle_kP = 6  # 4
+    angle_kP = 9  # 4
     angle_kI = 0.00015
     feeder_speed = 0.5
     threshold = 200  # 500
-    threshold_ang = 0.004  # 0.01
+    threshold_ang = 0.003  # 0.01
     threshold_fired = 30
-    trim = 0.018
+    trim = -0.009
 
 
 class GlobalVariables:

@@ -31,9 +31,12 @@ class ReadyAMP(Command):
                     self.trapper.set_arm("trap")
                 else:
                     self.trapper.set_arm("amp")
+        else:
+            self.shooter.set_known_setpoint("stow")
 
     def isFinished(self) -> bool:
-        if self.trapper.arm_setpoint == "amp" or "trap":
+        if self.trapper.check_arm_position() and (self.trapper.arm_setpoint == "amp" or
+                                                  self.trapper.arm_setpoint == "trap"):
             return True
         else:
             return False

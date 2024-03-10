@@ -77,13 +77,15 @@ class RobotContainer:
         DriverStation.silenceJoystickConnectionWarning(True)
 
         # Perform setup as normal, unless tuning mode is enabled.
+        # TODO TEST DAMPING
         if not tuning_setter:
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
-                lambda: self.robot_drive.drive_2ok_clt(
+                lambda: self.robot_drive.drive_2ok_clt_dmp(
                     self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis("RX", 0.06) * -1,
-                    10
+                    7,
+                    0.2
                 ), self.robot_drive
             ))
 
@@ -137,10 +139,9 @@ class RobotContainer:
         # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
         #     commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))
 
-        # TODO Enable this code to see if it... works
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
                 ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
-                                       self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.2))
+                                       self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
 
         # Hold for Slow Mode, variable based on depth of Trigger.
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.05)).whileTrue(
@@ -170,12 +171,15 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 180
             ), self.robot_drive))
-        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
-            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                0
-            ), self.robot_drive))
+        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
+        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+        #         0
+        #     ), self.robot_drive))
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onTrue(
+            self.robot_drive.follow_path_command([1.84, 7.80, 270], 270)
+        )
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
@@ -234,11 +238,11 @@ class RobotContainer:
                ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).onTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).toggleOnTrue(
             ReadyAMP(self.trapper, self.shooter, self.robot_drive))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("X")).whileTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(
             ScoreAMP(self.trapper, self.robot_drive))
 
         # Press to toggle between auto shooting and manual shooting from the podium
@@ -304,46 +308,40 @@ class RobotContainer:
             commands2.SequentialCommandGroup(
                 ReadyShooter(self.shooter, "stow", self.timer),
                 ClimbS1(self.trapper, self.leds)))
-        # commands2.cmd.run(lambda: self.trapper.set_climb_stage_1(), self.trapper)))
 
         # Press to preset for climbing.
         button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
              ClimbS2(self.trapper, self.leds, self.robot_drive))
-        # commands2.ParallelCommandGroup(
-        #     commands2.cmd.run(lambda: self.trapper.set_climb_stage_2(), self.trapper),
-        #     commands2.cmd.run(lambda: self.robot_drive.drive_2ok(0.05 * DriveConstants.kMaxSpeed, 0, 0, False),
-        #                       self.robot_drive)))
 
         # If climbing, set the leds to rainbow!
-        # button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
-        #     commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+        button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
+         commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds).ignoringDisable(True))
 
-        # Temporary controls setup for shooter tuning.
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(True), self.shooter))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).onFalse(
-        #     commands2.cmd.runOnce(lambda: self.shooter.tuning_toggler(False), self.shooter))
+        # Set shooter to STOW when pressing MENU on the driver controller
         button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
             commands2.cmd.runOnce(lambda: self.shooter.set_known_setpoint("stow"), self.shooter))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.shooter.set_known_setpoint("readied"), self.shooter))
+        # Set shooter to maintain angle while in targeting range
         button.Trigger(lambda: self.driver_controller_raw.get_button("VIEW")).toggleOnTrue(
             MaintainShooter(self.shooter, self.robot_drive, self.vision_system))
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive),
-        #                           self.vision_system, self.robot_drive)
-        # )
 
         # Vibrate the driver controller when targets are in view
         button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileTrue(
             commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(1)))
         button.Trigger(lambda: self.vision_system.range_to_angle() != -1).whileFalse(
-            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)))
+            commands2.cmd.run(lambda: self.driver_controller_raw.set_rumble(0)).ignoringDisable(True))
+        button.Trigger(lambda: DriverStation.isDisabled()).onTrue(
+            commands2.cmd.runOnce(lambda: self.driver_controller_raw.set_rumble(0)).ignoringDisable(True))
+
+        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
+        #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive), self.vision_system,
+        #                           self.robot_drive)
+        # )
 
         button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
-            commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive), self.vision_system,
-                                  self.robot_drive)
-        )
+            commands2.SequentialCommandGroup(
+                commands2.cmd.runOnce(lambda: self.trapper.reset_climber_zero(), self.trapper).ignoringDisable(True),
+                commands2.cmd.runOnce(lambda: self.trapper.stop_climbing(), self.trapper).ignoringDisable(True))
+            )
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.

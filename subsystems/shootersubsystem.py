@@ -6,9 +6,9 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 3500, "podium": 4500, "readied": 2000, "test": 4500}
+    shooter_setpoints = {"stow": 0, "subwoofer": 3000, "podium": 5200, "readied": 2000, "test": 4500}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.700, "podium": 0.765, "readied": 0.79, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.765, "readied": 0.79, "test": 0.772}
     # previous subwoofer 0.710
 
     def __init__(self) -> None:
@@ -34,7 +34,8 @@ class ShooterSubsystem(commands2.Subsystem):
         self.encoder = self.angler.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle)
         self.angler.setIdleMode(CANSparkMax.IdleMode.kBrake)
         self.angle_pid = self.angler.getPIDController()
-        self.encoder.setZeroOffset(0.554 + 0.1)
+        # self.encoder.setZeroOffset(0.554 + 0.1)
+        self.encoder.setZeroOffset(0.593 + 0.1)
         self.angle_pid.setFeedbackDevice(self.encoder)
         self.angle_pid.setP(ShooterConstants.angle_kP)
         self.angle_pid.setI(ShooterConstants.angle_kI)
@@ -89,8 +90,10 @@ class ShooterSubsystem(commands2.Subsystem):
                 ShooterConstants.threshold_ang <= self.encoder.getPosition() <= self.angle_setpoint + \
                 ShooterConstants.threshold_ang:
             return True
-        elif (self.angle_setpoint == self.angle_setpoints["stow"] or self.angle_setpoint ==
-                self.angle_setpoints["subwoofer"]) and self.angle_setpoint - 0.02 <= \
+        elif self.angle_setpoint == (self.angle_setpoints["stow"] + self.trim) and self.angle_setpoint - 0.03 <= \
+                self.encoder.getPosition() <= self.angle_setpoint + 0.03:
+            return True
+        elif self.angle_setpoint == (self.angle_setpoints["subwoofer"] + self.trim) and self.angle_setpoint - 0.02 <= \
                 self.encoder.getPosition() <= self.angle_setpoint + 0.02:
             return True
         else:
@@ -146,8 +149,8 @@ class ShooterSubsystem(commands2.Subsystem):
         # SmartDashboard.putNumber("Top Shooter Speed", self.shooter_encoder_top.getVelocity())
         # SmartDashboard.putNumber("Bottom Shooter Speed", self.shooter_encoder_bottom.getVelocity())
         # SmartDashboard.putNumber("Target Shooter Speed", self.shooter_setpoint)
-        # SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
-        # SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
+        SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
+        SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
         SmartDashboard.putNumber("Current Trim", self.trim)
         SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
         # SmartDashboard.putNumber("Lower Bound", self.shooter_setpoint - ShooterConstants.threshold)

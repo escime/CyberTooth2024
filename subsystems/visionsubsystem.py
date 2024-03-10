@@ -146,7 +146,11 @@ class VisionSubsystem(commands2.Subsystem):
                     current_position = self.robot_drive.get_pose()
                     if abs(current_position.x - vision_estimate.x) < 5 and \
                             abs(current_position.y - vision_estimate.y) < 5:  # Check if poses are within 10m.
-                        self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                        # TODO Check if this works smh
+                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
+                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
+                            if DriverStation.isTeleopEnabled():
+                                self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -165,6 +169,7 @@ class VisionSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
         SmartDashboard.putNumber("Alpha", self.alpha)
         SmartDashboard.putBoolean("Vision Targeting Overridden?", self.vision_shot_bypass)
+        SmartDashboard.putNumber("Range to Speaker Odo", self.range_to_speaker_odo(self.robot_drive))
         # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
 
     def toggle_camera(self) -> None:
@@ -345,8 +350,9 @@ class VisionSubsystem(commands2.Subsystem):
                              math.pow(drive.get_pose().y - VisionConstants.speaker_location_red[1], 2))
 
     def range_to_angle_m(self, drive: DriveSubsystem) -> float:
-        lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
-        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_dist = [5, 4.83, 3.78, 3.53, 3.0866, 2.4222]
+        lookup_angle = [0.79, 0.78, 0.77, 0.76, 0.758, 0.75]
+
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
             solution = -1
             for x in range(0, len(lookup_dist) - 1):

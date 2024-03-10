@@ -160,3 +160,9 @@ class TrapperSubsystem(commands2.Subsystem):
         # SmartDashboard.putBooleanArray("Note Acquisition Buffer", self.note_acquisition_buffer)
         SmartDashboard.putString("Arm Setpoint", self.arm_setpoint)
         # SmartDashboard.putNumber("Trapper Current Draw", self.trap.getOutputCurrent())
+
+    def reset_climber_zero(self) -> None:
+        self.climb_encoder.setPosition(0)
+
+    def stop_climbing(self) -> None:
+        self.is_climbing = False

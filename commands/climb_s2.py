@@ -35,4 +35,5 @@ class ClimbS2(Command):
 
     def end(self, interrupted: bool):
         self.trapper.run_climb(0)
+        self.trapper.is_climbing = True
 

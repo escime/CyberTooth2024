@@ -198,6 +198,11 @@ class DriveSubsystem(commands2.Subsystem):
         rotate_output = self.clt_controller.calculate(heading_target, current_heading)
         self.drive_2ok(x_speed, y_speed, rotate_output, True)
 
+    def drive_2ok_clt_dmp(self, x_speed: float, y_speed: float, rot: float, scale: float, damping_scalar: float):
+        damp = 1 - (rot * damping_scalar)
+        self.drive_2ok_clt(x_speed * damp, y_speed * damp, rot, scale)
+
+
     def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
         """The default drive command for the robot.
         x_speed: Float, -max_speed to +max_speed.
@@ -266,7 +271,6 @@ class DriveSubsystem(commands2.Subsystem):
                                 self.m_BR.get_position()))
         self.m_field.setRobotPose(self.get_pose())
 
-        # TODO Remove this math if not using "shoot while moving"
         self.vx_new, self.vy_new, self.omega_new = self.get_field_relative_velocity()
         self.ax, self.ay, self.alpha = self.get_field_relative_acceleration([self.vx_new, self.vy_new, self.omega_new],
                                                                             [self.vx_old, self.vy_old, self.omega_old],
@@ -285,10 +289,6 @@ class DriveSubsystem(commands2.Subsystem):
             #     self.balanced = True
             # else:
             #     self.balanced = False
-            # TODO Check if this whole "global variables" methodology works at all. Kinda doubt it ngl.
-            # if self.get_pose().x - GlobalVariables.current_vision.x < 1 and \
-            #         self.get_pose().y - GlobalVariables.current_vision.y < 1:
-            #     self.add_vision(GlobalVariables.current_vision, GlobalVariables.timestamp)
             self.period_update_time = self.timer.get()
 
         SmartDashboard.putData("Field", self.m_field)
@@ -427,7 +427,7 @@ class DriveSubsystem(commands2.Subsystem):
 
         path = PathPlannerPath(
             bezier_points,
-            PathConstraints(1, 1, 2 * 3.14159, 4 * 3.14159),
+            PathConstraints(2, 1.5, 2 * 3.14159, 4 * 3.14159),
             GoalEndState(0, Rotation2d.fromDegrees(end_rotation))
         )
 

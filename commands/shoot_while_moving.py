@@ -30,7 +30,7 @@ class ShootVisionWhileMoving(Command):
         self.addRequirements(drive)
         self.timer = timer
         self.overrun_time = self.timer.get()
-        self.time_to_shot = 1  # Really this should be a lookup table but I'll get there
+        self.time_to_shot = 0.375  # Really this should be a lookup table but I'll get there
         self.accel_comp = 0.1  # Unmeasurable garbage
         self.last_x = 0
         self.last_y = 0
@@ -42,7 +42,7 @@ class ShootVisionWhileMoving(Command):
 
     def execute(self) -> None:
         if self.vision.no_sight_range_to_angle(self.drive) != -1:
-            # self.set_lookahead_range()
+            self.set_lookahead_range()
             self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
                                               VisionConstants.shooter_default_speed)
             if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(self.drive):

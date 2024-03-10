@@ -17,7 +17,7 @@ class ReadyShooter(Command):
         self.start_time = self.timer.get()
 
     def isFinished(self) -> bool:
-        if self.shooter.get_ready_to_shoot() or self.timer.get() - 3 > self.start_time:
+        if self.shooter.get_ready_to_shoot() or self.timer.get() - 1.5 > self.start_time:
             return True
         else:
             return False
