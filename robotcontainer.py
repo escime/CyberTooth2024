@@ -77,7 +77,6 @@ class RobotContainer:
         DriverStation.silenceJoystickConnectionWarning(True)
 
         # Perform setup as normal, unless tuning mode is enabled.
-        # TODO TEST DAMPING
         if not tuning_setter:
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
                 lambda: self.robot_drive.drive_2ok_clt_dmp(
@@ -103,7 +102,7 @@ class RobotContainer:
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
-                               "B_Score4_Fast", "B_Score4_Fastest"]
+                               "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)

@@ -78,7 +78,7 @@ class ShootVision(Command):
                 else:
                     return False
         else:
-            if self.shooter.get_ready_to_shoot() or self.timer.get() - 3 > self.start_time:
+            if self.shooter.get_ready_to_shoot() or self.timer.get() - 2 > self.start_time:
                 return True
             else:
                 return False

@@ -149,8 +149,8 @@ class VisionSubsystem(commands2.Subsystem):
                         # TODO Check if this works smh
                         if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
                            abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
-                            if DriverStation.isTeleopEnabled():
-                                self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                            # if DriverStation.isTeleopEnabled():
+                            self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -330,13 +330,23 @@ class VisionSubsystem(commands2.Subsystem):
 
     def get_aligned_odo(self, drive: DriveSubsystem) -> bool:
         heading = drive.get_heading_odo().degrees()
-        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            heading = heading + 180
-        # print("Alpha Min: " + str(self.alpha - VisionConstants.turn_to_target_error_max))
-        # print("Alpha Max: " + str(self.alpha + VisionConstants.turn_to_target_error_max))
+        # if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+        #     heading = heading + 180
+        if self.alpha > 180:
+            adjusted_alpha = self.alpha - 180
+        else:
+            adjusted_alpha = self.alpha
+        if heading < 0:
+            heading = 180 + heading
+        if adjusted_alpha < 0:
+            adjusted_alpha *= -1
+        if adjusted_alpha > 180:
+            adjusted_alpha = 180 - (adjusted_alpha - 180)
+        # print("Alpha Min: " + str(adjusted_alpha - 2))
+        # print("Alpha Max: " + str(adjusted_alpha + 2))
         # print("Heading: " + str(heading))
-        if self.alpha - 2 < heading < \
-                self.alpha + 2:
+        if adjusted_alpha - 2 < heading < \
+                adjusted_alpha + 2:
             return True
         else:
             return False
@@ -396,6 +406,11 @@ class VisionSubsystem(commands2.Subsystem):
                 alpha = 180 + math.degrees(math.atan2(y, x))
             else:
                 alpha = -1 * (180 + math.degrees(math.atan2(-y, x)))
+
+            if y_speed > 0:
+                alpha -= y_speed * 10
+            else:
+                alpha -= y_speed * 10
         else:
             x = drive.get_pose().x - VisionConstants.speaker_location_red[0]
             y = drive.get_pose().y - VisionConstants.speaker_location_red[1]
@@ -403,5 +418,10 @@ class VisionSubsystem(commands2.Subsystem):
                 alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
             else:
                 alpha = math.degrees(math.atan2(-y, -x)) + 180
+
+            if y_speed > 0:
+                alpha -= y_speed * 10
+            else:
+                alpha += (-1) * y_speed * 10
         self.alpha = alpha
         drive.turret_drive(x_speed, y_speed, alpha)

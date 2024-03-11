@@ -32,7 +32,7 @@ class DriveConstants:
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
     snap_controller_PID = [0.05, 0, 0]  # 0.05
-    turret_controller_PID = [0.08, 0, 0]
+    turret_controller_PID = [0.08, 0, 0.0001]
     clt_controller_PID = [1, 0, 0]
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
@@ -53,7 +53,7 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.9
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 6  # Previously 12
+    kPXController = 5  # Previously 12
     kDXController = 0
     kPThetaController = 3.5  # Previously 10
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
@@ -143,7 +143,7 @@ class ShooterConstants:
     threshold = 200  # 500
     threshold_ang = 0.003  # 0.01
     threshold_fired = 30
-    trim = -0.009
+    trim = -0.01
 
 
 class GlobalVariables:

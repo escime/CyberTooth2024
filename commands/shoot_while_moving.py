@@ -30,10 +30,11 @@ class ShootVisionWhileMoving(Command):
         self.addRequirements(drive)
         self.timer = timer
         self.overrun_time = self.timer.get()
-        self.time_to_shot = 0.375  # Really this should be a lookup table but I'll get there
+        self.time_to_shot = 0.3  # Really this should be a lookup table, but I'll get there
         self.accel_comp = 0.1  # Unmeasurable garbage
         self.last_x = 0
         self.last_y = 0
+        self.ready_buffer = [False] * 8
 
     def initialize(self):
         self.overrun_time = self.timer.get()
@@ -43,23 +44,27 @@ class ShootVisionWhileMoving(Command):
     def execute(self) -> None:
         if self.vision.no_sight_range_to_angle(self.drive) != -1:
             self.set_lookahead_range()
-            self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
-                                              VisionConstants.shooter_default_speed)
+            # self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
+            #                                   VisionConstants.shooter_default_speed)
             if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(self.drive):
-                self.vision.align_to_speaker_turret(self.last_x, self.last_y, self.drive)
-                self.intake.intake(1)
-                self.shooter.shoot()
-                self.trapper.advance()
+                self.ready_buffer[0] = True
             else:
-                self.vision.align_to_speaker_turret(self.controller.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed
-                                                    * self.speed_scalar,
-                                                    self.controller.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed
-                                                    * self.speed_scalar,
+                self.ready_buffer[0] = False
+                self.vision.align_to_speaker_turret(self.controller.get_axis_squared("LY", 0.06) *
+                                                    DriveConstants.kMaxSpeed * self.speed_scalar,
+                                                    self.controller.get_axis_squared("LX", 0.06) *
+                                                    DriveConstants.kMaxSpeed * self.speed_scalar,
                                                     self.drive)
                 self.last_x = self.controller.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * \
                     self.speed_scalar
                 self.last_y = self.controller.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * \
                     self.speed_scalar
+            self.ready_buffer = self.ready_buffer[1:] + self.ready_buffer[:1]
+            if all(self.ready_buffer):
+                self.vision.align_to_speaker_turret(self.last_x, self.last_y, self.drive)
+                self.intake.intake(1)
+                self.shooter.shoot()
+                self.trapper.advance()
         else:
             self.drive.drive_2ok_clt(self.controller.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                                      self.controller.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
@@ -93,13 +98,6 @@ class ShootVisionWhileMoving(Command):
         new_dist = sqrt(pow(self.drive.get_pose().x - virtual_goal_x, 2) +
                         pow(self.drive.get_pose().y - virtual_goal_y, 2))
 
-        # moving_goal_location = Translation2d(virtual_goal_x, virtual_goal_y)
-
-        # to_moving_goal = moving_goal_location - self.drive.get_pose().translation()
-
-        # new_dist = to_moving_goal.distance(self.drive.get_pose().translation())
-
-        # print(new_dist)
         if self.vision.range_to_angle_rand(new_dist) != -1:
             self.shooter.set_unknown_setpoint(self.vision.range_to_angle_rand(new_dist),
                                               VisionConstants.shooter_default_speed)
