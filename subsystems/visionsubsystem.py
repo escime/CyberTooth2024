@@ -8,14 +8,14 @@ from subsystems.drivesubsystem import DriveSubsystem
 # from subsystems.intakesubsystem import IntakeSubsystem
 # from subsystems.trappersubsystem import TrapperSubsystem
 # from commands.shoot_leds import ShootLEDs
-from constants import VisionConstants, GlobalVariables
+from constants import VisionConstants
 import math
 from wpimath.controller import PIDController
 
 
 class VisionSubsystem(commands2.Subsystem):
     tv = 0.0
-    tvf = 0.0
+    # tvf = 0.0
     ta = 0.0
     tl = 0.0
     ty = 0.0
@@ -36,38 +36,40 @@ class VisionSubsystem(commands2.Subsystem):
     target_locked = False
     alpha = 0
     vision_shot_bypass = False
+    # txf = 0.0
 
     def __init__(self, timer: Timer, robot_drive: DriveSubsystem) -> None:
         super().__init__()
         self.timer = timer
         self.robot_drive = robot_drive  # This is structurally not great but necessary for certain features.
         self.limelight_table = NetworkTableInstance.getDefault().getTable("limelight")
-        self.limelight_front = NetworkTableInstance.getDefault().getTable("llf")
+        # self.limelight_front = NetworkTableInstance.getDefault().getTable("limelight-front")
         self.record_time = self.timer.get()
         self.latency = 0
 
     def toggle_leds(self, on: bool):
         if on:
             self.limelight_table.putNumber("ledMode", 3.0)
-            self.limelight_front.putNumber("ledMode", 3.0)
+            # self.limelight_front.putNumber("ledMode", 3.0)
             return True
         else:
             self.limelight_table.putNumber("ledMode", 1.0)
-            self.limelight_front.putNumber("ledMode", 1.0)
+            # self.limelight_front.putNumber("ledMode", 1.0)
             return False
 
     def flash_leds(self, on: bool):
         if on:
             self.limelight_table.putNumber("ledMode", 2.0)
-            self.limelight_front.putNumber("ledMode", 2.0)
+            # self.limelight_front.putNumber("ledMode", 2.0)
         else:
             self.limelight_table.putNumber("ledMode", 1.0)
-            self.limelight_front.putNumber("ledMode", 1.0)
+            # self.limelight_front.putNumber("ledMode", 1.0)
 
     def update_values(self):
         """Update relevant values from LL NT to robot variables."""
         self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
         # self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        # self.txf = self.limelight_front.getEntry("tx").getDouble(0)
         # self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
         self.tl = self.limelight_table.getEntry("tl").getDouble(0.0)  # Get pipeline latency contribution.
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
@@ -88,6 +90,7 @@ class VisionSubsystem(commands2.Subsystem):
         """Update relevant values from LL NT to robot variables."""
         self.tv = self.limelight_table.getEntry("tv").getDouble(0)  # Get if AprilTag is visible.
         # self.tvf = self.limelight_front.getEntry("tv").getDouble(0)  # Get if Note is visible.
+        # self.txf = self.limelight_front.getEntry("tx").getDouble(0)
         # self.ta = self.limelight_front.getEntry("ta").getDouble(0)  # Get target area of Note.
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
@@ -100,12 +103,12 @@ class VisionSubsystem(commands2.Subsystem):
         else:
             return False
 
-    def has_targets_f(self) -> bool:
-        """Checks if the limelight can see a Note."""
-        if self.tvf == 1:
-            return True
-        else:
-            return False
+    # def has_targets_f(self) -> bool:
+    #     """Checks if the limelight can see a Note."""
+    #     if self.tvf == 1:
+    #         return True
+    #     else:
+    #         return False
 
     def vision_estimate_pose(self) -> Pose2d:
         """Returns limelight estimated robot pose."""
@@ -256,27 +259,27 @@ class VisionSubsystem(commands2.Subsystem):
                 solution = (m * self.ta) + b
         return solution
 
-    def range_and_turn_to_target(self, drive: DriveSubsystem, target_range: float) -> None:
-        """Turn to target and approach a game piece."""
-        if self.has_targets_f():
-            rotate_output = self.turn_to_target_controller.calculate(0, self.tx)
-            ranging = self.calculate_range_area()
-            if ranging != -1:
-                drive_output = self.approach_target_controller.calculate(target_range, ranging)
-            else:
-                drive_output = 0
-            SmartDashboard.putNumber("Distance to NOTE", ranging)
-            drive.drive_2ok(drive_output, 0, rotate_output, False)
-        else:
-            drive.drive_2ok(0, 0, 0, False)
+    # def range_and_turn_to_target(self, drive: DriveSubsystem, target_range: float) -> None:
+    #     """Turn to target and approach a game piece."""
+    #     if self.has_targets_f():
+    #         rotate_output = self.turn_to_target_controller.calculate(0, self.tx)
+    #         ranging = self.calculate_range_area()
+    #         if ranging != -1:
+    #             drive_output = self.approach_target_controller.calculate(target_range, ranging)
+    #         else:
+    #             drive_output = 0
+    #         SmartDashboard.putNumber("Distance to NOTE", ranging)
+    #         drive.drive_2ok(drive_output, 0, rotate_output, False)
+    #     else:
+    #         drive.drive_2ok(0, 0, 0, False)
 
-    def forward_and_turn_to_target(self, drive: DriveSubsystem, speed: float) -> None:
-        """Turn towards a target and drive forward at a constant, set speed. Designed for GP pickup."""
-        if self.has_targets_f():
-            rotate_output = self.turn_to_target_controller.calculate(0, self.tx)
-            drive.drive_2ok(speed, 0, rotate_output, False)
-        else:
-            drive.drive_2ok(0, 0, 0, False)
+    # def forward_and_turn_to_target(self, drive: DriveSubsystem, speed: float) -> None:
+    #     """Turn towards a target and drive forward at a constant, set speed. Designed for GP pickup."""
+    #     if self.has_targets_f():
+    #         rotate_output = self.turn_to_target_controller.calculate(0, self.txf)
+    #         drive.drive_2ok(speed, 0, rotate_output, False)
+    #     else:
+    #         drive.drive_2ok(speed * 0.75, 0, 0, False)
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""

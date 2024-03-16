@@ -6,9 +6,9 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 3000, "podium": 5200, "readied": 2000, "test": 4500}
+    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 4500}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.765, "readied": 0.79, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.758, "readied": 0.79, "test": 0.772}
     # previous subwoofer 0.710
 
     def __init__(self) -> None:
@@ -146,9 +146,9 @@ class ShooterSubsystem(commands2.Subsystem):
 
     def periodic(self) -> None:
         """Any periodic routines for the shooter."""
-        # SmartDashboard.putNumber("Top Shooter Speed", self.shooter_encoder_top.getVelocity())
-        # SmartDashboard.putNumber("Bottom Shooter Speed", self.shooter_encoder_bottom.getVelocity())
-        # SmartDashboard.putNumber("Target Shooter Speed", self.shooter_setpoint)
+        SmartDashboard.putNumber("Top Shooter Speed", self.shooter_encoder_top.getVelocity())
+        SmartDashboard.putNumber("Bottom Shooter Speed", self.shooter_encoder_bottom.getVelocity())
+        SmartDashboard.putNumber("Target Shooter Speed", self.shooter_setpoint)
         SmartDashboard.putNumber("Shooter Angle", self.encoder.getPosition())
         SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
         SmartDashboard.putNumber("Current Trim", self.trim)

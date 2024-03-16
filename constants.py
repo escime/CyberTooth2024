@@ -55,7 +55,7 @@ class AutoConstants:
 
     kPXController = 5  # Previously 12
     kDXController = 0
-    kPThetaController = 3.5  # Previously 10
+    kPThetaController = 3  # Previously 3.5
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond
@@ -119,9 +119,9 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.07  # Will require tuning. #0.1
+    turnkP = 0.08  # Will require tuning. # 0.07
     turnkI = 0
-    turnkD = 0.5  # was 0.01
+    turnkD = 0.1  # was 0.5
     rangekP = 0.05
     turn_to_target_error_max = 2  # In degrees.
     min_command = 0.0  # Should be in volts, will require tuning.
@@ -134,16 +134,16 @@ class ShooterConstants:
     top_id = 34
     bottom_id = 33
     current_limit = 38
-    shooter_kFF = 0.000172
-    shooter_kP = 0.0001
+    shooter_kFF = 0.0002  # 0.000172
+    shooter_kP = 0.0002  # 0.0002
     shooter_kD = 0
     angle_kP = 9  # 4
     angle_kI = 0.00015
-    feeder_speed = 0.5
+    feeder_speed = 0.9
     threshold = 200  # 500
     threshold_ang = 0.003  # 0.01
     threshold_fired = 30
-    trim = -0.01
+    trim = -0.015
 
 
 class GlobalVariables:

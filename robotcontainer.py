@@ -53,11 +53,11 @@ class RobotContainer:
         self.timer = Timer()
         self.timer.start()
         if wpilib.RobotBase.isReal():
-            print("No simulation, starting logging!")
+            print("Not a simulation, logging enabled!")
             DataLogManager.start()
             DriverStation.startDataLog(DataLogManager.getLog(), True)
         else:
-            print("Simulated, no logging.")
+            print("Simulated, logging disabled.")
 
         LiveWindow.disableAllTelemetry()
 
@@ -170,15 +170,15 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 180
             ), self.robot_drive))
-        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-        #         0
-        #     ), self.robot_drive))
-        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onTrue(
-            self.robot_drive.follow_path_command([1.84, 7.80, 270], 270)
-        )
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).toggleOnTrue(
+            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                0
+            ), self.robot_drive))
+        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onTrue(
+        #     self.robot_drive.follow_path_command([1.84, 7.80, 270], 270)
+        # )
         button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
@@ -277,6 +277,8 @@ class RobotContainer:
                               self.trapper))
         button.Trigger(lambda: self.operator_controller_raw.get_axis_triggered("LY", 0.05)).onFalse(
             commands2.cmd.run(lambda: self.trapper.run_climb(0), self.trapper))
+        button.Trigger(lambda: DriverStation.isDisabled()).onTrue(
+            commands2.cmd.run(lambda: self.trapper.run_climb(0), self.trapper).ignoringDisable(True))
 
         # Manually control the trap intake.
         button.Trigger(lambda: self.operator_controller_raw.get_d_pad_pull("E")).whileTrue(
@@ -331,16 +333,20 @@ class RobotContainer:
         button.Trigger(lambda: DriverStation.isDisabled()).onTrue(
             commands2.cmd.runOnce(lambda: self.driver_controller_raw.set_rumble(0)).ignoringDisable(True))
 
-        # button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.vision_system.for_testing_no_viz(self.robot_drive), self.vision_system,
-        #                           self.robot_drive)
-        # )
-
         button.Trigger(lambda: self.operator_controller_raw.get_button("VIEW")).onTrue(
             commands2.SequentialCommandGroup(
                 commands2.cmd.runOnce(lambda: self.trapper.reset_climber_zero(), self.trapper).ignoringDisable(True),
                 commands2.cmd.runOnce(lambda: self.trapper.stop_climbing(), self.trapper).ignoringDisable(True))
             )
+
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("RTHUMB")).whileTrue(
+        #     commands2.SequentialCommandGroup(
+        #         commands2.ParallelDeadlineGroup(
+        #             DriveToNote(self.robot_drive, self.intake, self.vision_system, self.trapper, self.timer),
+        #             commands2.cmd.run(lambda: self.leds.flash_color([119, 247, 30], 2), self.leds)),
+        #         commands2.cmd.run(lambda: self.trapper.manual_trap(1), self.trapper).withTimeout(0.25),
+        #         commands2.cmd.runOnce(lambda: self.trapper.manual_trap(0), self.trapper))
+        #     )
 
     def getAutonomousCommand(self) -> commands2.cmd:
         """Use this to pass the autonomous command to the main Robot class.

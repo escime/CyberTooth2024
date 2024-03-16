@@ -63,7 +63,8 @@ class ShootVision(Command):
                     self.target_locked = True
         else:
             self.shooter.set_known_setpoint("podium")
-            self.start_time = self.timer.get()
+            self.drive.drive_2ok(0, 0, 0, False)
+            # self.start_time = self.timer.get()
 
     def isFinished(self) -> bool:
         if not self.vision.vision_shot_bypass:
@@ -78,7 +79,7 @@ class ShootVision(Command):
                 else:
                     return False
         else:
-            if self.shooter.get_ready_to_shoot() or self.timer.get() - 2 > self.start_time:
+            if self.shooter.get_ready_to_shoot():
                 return True
             else:
                 return False
