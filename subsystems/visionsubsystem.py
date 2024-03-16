@@ -10,7 +10,8 @@ from subsystems.drivesubsystem import DriveSubsystem
 # from commands.shoot_leds import ShootLEDs
 from constants import VisionConstants
 import math
-from wpimath.controller import PIDController
+from wpimath.controller import PIDController, ProfiledPIDController
+from wpimath.trajectory import TrapezoidProfile
 
 
 class VisionSubsystem(commands2.Subsystem):
@@ -31,6 +32,8 @@ class VisionSubsystem(commands2.Subsystem):
     turn_to_target_controller = PIDController(VisionConstants.turnkP, VisionConstants.turnkI, VisionConstants.turnkD)
     approach_target_controller = PIDController(VisionConstants.rangekP, 0, 0)
     shoot_while_move_controller = PIDController(0.2, 0, 0)
+    mp_ttt_controller = ProfiledPIDController(VisionConstants.mp_ttt_kp, VisionConstants.mp_ttt_ki,
+                                              VisionConstants.mp_ttt_kd, TrapezoidProfile.Constraints(2.5, 2.5))
     pipeline_id = 0
     vision_odo = True
     target_locked = False
@@ -231,12 +234,12 @@ class VisionSubsystem(commands2.Subsystem):
     def rotate_to_target(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
         """Aim at target (for shooter.)"""
         if self.has_targets():
-            if self.tx < -VisionConstants.turn_to_target_error_max:
-                rotate_output = self.turn_to_target_controller.calculate(0, self.tx) - VisionConstants.min_command
+            if self.tx + 5 < -VisionConstants.turn_to_target_error_max:
+                rotate_output = self.turn_to_target_controller.calculate(-5, self.tx) - VisionConstants.min_command
                 self.target_locked = False
                 # print("Tx too low! Output: " + str(rotate_output))
-            elif self.tx > VisionConstants.turn_to_target_error_max:
-                rotate_output = self.turn_to_target_controller.calculate(0, self.tx) + VisionConstants.min_command
+            elif self.tx + 5 > VisionConstants.turn_to_target_error_max:
+                rotate_output = self.turn_to_target_controller.calculate(-5, self.tx) + VisionConstants.min_command
                 self.target_locked = False
                 # print("Tx too high! Output: " + str(rotate_output))
             else:
@@ -328,8 +331,8 @@ class VisionSubsystem(commands2.Subsystem):
                 alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
             else:
                 alpha = math.degrees(math.atan2(-y, -x)) + 180
-        self.alpha = alpha
-        drive.snap_drive(x_speed, y_speed, alpha)
+        self.alpha = alpha - 5
+        drive.snap_drive(x_speed, y_speed, alpha - 5)
 
     def get_aligned_odo(self, drive: DriveSubsystem) -> bool:
         heading = drive.get_heading_odo().degrees()
@@ -428,3 +431,21 @@ class VisionSubsystem(commands2.Subsystem):
                 alpha += (-1) * y_speed * 10
         self.alpha = alpha
         drive.turret_drive(x_speed, y_speed, alpha)
+
+    def rotate_to_target_mp(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
+        """Aim at target (for shooter.)"""
+        if self.has_targets():
+            if self.tx < -VisionConstants.turn_to_target_error_max:
+                rotate_output = self.mp_ttt_controller.calculate(0, self.tx) - VisionConstants.min_command
+                self.target_locked = False
+                # print("Tx too low! Output: " + str(rotate_output))
+            elif self.tx > VisionConstants.turn_to_target_error_max:
+                rotate_output = self.mp_ttt_controller.calculate(0, self.tx) + VisionConstants.min_command
+                self.target_locked = False
+                # print("Tx too high! Output: " + str(rotate_output))
+            else:
+                rotate_output = 0
+                self.target_locked = True
+        else:
+            rotate_output = 0
+        drive.drive_2ok(x_speed, y_speed, rotate_output, True)

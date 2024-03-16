@@ -6,7 +6,8 @@ import commands2
 from wpimath.kinematics import ChassisSpeeds, SwerveDrive4Kinematics, SwerveModulePosition
 from wpimath.estimator import SwerveDrive4PoseEstimator
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
-from wpimath.controller import PIDController
+from wpimath.controller import PIDController, ProfiledPIDController
+from wpimath.trajectory import TrapezoidProfile
 from subsystems.swervemodule import SwerveModule
 from constants import DriveConstants, ModuleConstants, AutoConstants
 from wpilib import SmartDashboard, Field2d, Timer, DriverStation
@@ -36,6 +37,8 @@ class DriveSubsystem(commands2.Subsystem):
         self.snap_controller = PIDController(DriveConstants.snap_controller_PID[0],
                                              DriveConstants.snap_controller_PID[1],
                                              DriveConstants.snap_controller_PID[2])
+                                                     # TrapezoidProfile.Constraints(-20, -20),
+                                                     # 0.02)
         self.snap_controller.enableContinuousInput(-180, 180)
 
         self.turret_controller = PIDController(DriveConstants.turret_controller_PID[0],
