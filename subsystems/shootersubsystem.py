@@ -6,9 +6,9 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 4500}
+    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 4500, "feed": 3000}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.758, "readied": 0.79, "test": 0.772}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.770, "readied": 0.79, "test": 0.772, "feed": 0.73}
     # previous subwoofer 0.710
 
     def __init__(self) -> None:
@@ -153,6 +153,8 @@ class ShooterSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Shooter Angle Target Real", self.angle_setpoint)
         SmartDashboard.putNumber("Current Trim", self.trim)
         SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
+        SmartDashboard.putBoolean("Shooter Up to Speed", self.get_at_speed())
+        SmartDashboard.putBoolean("Shooter At Angle", self.get_at_angle())
         # SmartDashboard.putNumber("Lower Bound", self.shooter_setpoint - ShooterConstants.threshold)
         # SmartDashboard.putNumber("Upper Bound", self.shooter_setpoint + ShooterConstants.threshold)
 

@@ -145,7 +145,7 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
             if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
-            if self.timer.get() - 0.1 > self.record_time:  # If it's been 0.5s since last update,
+            if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.5s since last update,
                 self.update_values()  # Update limelight values.
                 if self.has_targets():  # If an AprilTag is visible,
                     vision_estimate = self.vision_estimate_pose()
@@ -153,8 +153,8 @@ class VisionSubsystem(commands2.Subsystem):
                     if abs(current_position.x - vision_estimate.x) < 5 and \
                             abs(current_position.y - vision_estimate.y) < 5:  # Check if poses are within 10m.
                         # TODO Check if this works smh
-                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
-                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
+                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.25 and \
+                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.25:
                             # if DriverStation.isTeleopEnabled():
                             self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.

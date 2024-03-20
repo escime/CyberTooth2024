@@ -53,7 +53,7 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.9
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 5  # Previously 12
+    kPXController = 5.2  # Previously 12
     kDXController = 0
     kPThetaController = 3  # Previously 3.5
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
@@ -119,9 +119,9 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.09  # Will require tuning. # 0.07
+    turnkP = 0.05  # Will require tuning. # 0.07
     turnkI = 0
-    turnkD = 0.1  # was 0.5
+    turnkD = 0  # was 0.5
     rangekP = 0.05
     turn_to_target_error_max = 3  # In degrees.
     min_command = 0.0  # Should be in volts, will require tuning.

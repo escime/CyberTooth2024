@@ -36,6 +36,7 @@ from commands.climb_s1 import ClimbS1
 from commands.climb_s2 import ClimbS2
 from commands.maintain_shooter import MaintainShooter
 from commands.shoot_while_moving import ShootVisionWhileMoving
+from commands.shoot_vision_feed import ShootVisionFeed
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 
@@ -102,7 +103,8 @@ class RobotContainer:
             self.auto_names = ["Test", "MobilityOnly", "ScoreOnly", "A_ScoreMobility", "B_ScoreMobility",
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
-                               "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline"]
+                               "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline",
+                               "C_Score3_Midline"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -138,9 +140,14 @@ class RobotContainer:
         # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
         #     commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))
 
-        button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
-                ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
-                                       self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
+        # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
+        #         ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
+        #                                self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
+
+        button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.3)).whileTrue(
+            commands2.SequentialCommandGroup(
+                ShootVisionFeed(self.shooter, self.robot_drive, self.intake, self.trapper),
+                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer)))
 
         # Hold for Slow Mode, variable based on depth of Trigger.
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.05)).whileTrue(

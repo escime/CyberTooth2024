@@ -69,7 +69,7 @@ class ShootVision(Command):
     def isFinished(self) -> bool:
         if not self.vision.vision_shot_bypass:
             if not self.bypass_timer:
-                if self.target_locked or self.timer.get() - 2 > self.overrun_time:
+                if self.target_locked or self.timer.get() - 2.2 > self.overrun_time:
                     return True
                 else:
                     return False
