@@ -123,7 +123,7 @@ class VisionConstants:
     turnkI = 0
     turnkD = 0  # was 0.5
     rangekP = 0.05
-    turn_to_target_error_max = 3  # In degrees.
+    turn_to_target_error_max = 2  # In degrees.
     min_command = 0.0  # Should be in volts, will require tuning.
     shooter_default_speed = 5300  # 4500
     speaker_location_blue = [0, 5.53]
