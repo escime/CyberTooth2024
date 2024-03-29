@@ -39,6 +39,7 @@ from commands.shoot_while_moving import ShootVisionWhileMoving
 from commands.shoot_vision_feed import ShootVisionFeed
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
+from commands.passthrough import Passthrough
 
 
 class RobotContainer:
@@ -104,7 +105,7 @@ class RobotContainer:
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
                                "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline",
-                               "C_Score3_Midline"]
+                               "C_Score3_Midline", "Chaos"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -140,9 +141,9 @@ class RobotContainer:
         # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
         #     commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))
 
-        # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.1)).whileTrue(
-        #         ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
-        #                                self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("RTHUMB")).whileTrue(
+                ShootVisionWhileMoving(self.shooter, self.vision_system, self.intake, self.trapper,
+                                       self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
 
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.3)).whileTrue(
             commands2.SequentialCommandGroup(
@@ -231,7 +232,7 @@ class RobotContainer:
         # Hold for test shot (temporary lol)
         # button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(
         #     commands2.SequentialCommandGroup(
-        #         ReadyShooter(self.shooter, "podium", self.timer),
+        #         ReadyShooter(self.shooter, "test", self.timer),
         #         Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer)))
 
         # Hold to autonomously shoot a NOTE.
@@ -245,7 +246,7 @@ class RobotContainer:
 
         # Press to prepare to place a NOTE in the AMP.
         button.Trigger(lambda: self.operator_controller_raw.get_button("A")).toggleOnTrue(
-            ReadyAMP(self.trapper, self.shooter, self.robot_drive))
+            ReadyAMP(self.trapper, self.shooter, self.robot_drive, self.intake))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
         button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(
@@ -315,7 +316,7 @@ class RobotContainer:
         button.Trigger(lambda: self.operator_controller_raw.get_button("B")).onTrue(
             commands2.SequentialCommandGroup(
                 ReadyShooter(self.shooter, "stow", self.timer),
-                ClimbS1(self.trapper, self.leds)))
+                ClimbS1(self.trapper, self.leds, self.intake)))
 
         # Press to preset for climbing.
         button.Trigger(lambda: self.operator_controller_raw.get_button("Y")).onTrue(
@@ -391,6 +392,7 @@ class RobotContainer:
                 ShootLEDs(self.leds, "slow")))
         NamedCommands.registerCommand("turn_north", Turn(self.robot_drive, 0, self.timer))
         NamedCommands.registerCommand("toggle_odo", ToggleOdo(self.vision_system))
+        NamedCommands.registerCommand("vision_estimate", VisionEstimate(self.vision_system, self.robot_drive))
         NamedCommands.registerCommand("rainbow_leds", commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
         NamedCommands.registerCommand("flash_green",
                                       commands2.cmd.run(lambda: self.leds.flash_color([255, 0, 0], 2), self.leds))
@@ -404,3 +406,4 @@ class RobotContainer:
                                       commands2.cmd.run(lambda: self.leds.flash_color([50, 149, 168], 2), self.leds))
         NamedCommands.registerCommand("maintain_shooter", MaintainShooter(self.shooter, self.robot_drive,
                                                                           self.vision_system))
+        NamedCommands.registerCommand("passthrough", Passthrough("readied", self.shooter, self.intake, self.trapper))

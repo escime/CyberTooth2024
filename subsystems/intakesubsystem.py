@@ -15,6 +15,8 @@ class IntakeSubsystem(commands2.Subsystem):
         self.motor.setSmartCurrentLimit(IntakeConstants.current_limit)
         self.follower.setSmartCurrentLimit(IntakeConstants.current_limit)
         self.follower.follow(self.motor, False)
+        self.motor.setControlFramePeriodMs(120)
+        self.follower.setControlFramePeriodMs(120)
         self.motor.burnFlash()
         self.follower.burnFlash()
 

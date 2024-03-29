@@ -6,9 +6,11 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 4500, "feed": 3000}
+    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 5300, "feed": 3750,
+                         "passthrough": 2000}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.710, "podium": 0.770, "readied": 0.79, "test": 0.772, "feed": 0.73}
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.711, "podium": 0.75, "readied": 0.79, "test": 0.765, "feed": 0.73,
+                       "passthrough": 0.765}
     # previous subwoofer 0.710
 
     def __init__(self) -> None:
@@ -44,6 +46,11 @@ class ShooterSubsystem(commands2.Subsystem):
 
         self.feeder = CANSparkMax(32, CANSparkMax.MotorType.kBrushless)
         self.feeder.setIdleMode(CANSparkMax.IdleMode.kBrake)
+
+        self.shooter_top.setControlFramePeriodMs(60)
+        self.shooter_bottom.setControlFramePeriodMs(60)
+        self.angler.setControlFramePeriodMs(60)
+        self.feeder.setControlFramePeriodMs(120)
 
         self.shooter_top.burnFlash()
         self.shooter_bottom.burnFlash()

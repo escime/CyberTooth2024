@@ -45,20 +45,21 @@ class DriveConstants:
 
     balance_PID = [0.01, 0, 0]
 
-    slew_rate_drive = 50
+    slew_rate_drive = 110  # 50
     slew_rate_turn = 0
 
 
 class AutoConstants:
-    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed * 0.9
+    kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 5.2  # Previously 12
+    kPXController = 6  # Previously 5
+    kIXController = 0
     kDXController = 0
-    kPThetaController = 3  # Previously 3.5
+    kPThetaController = 6  # Previously 3
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
-    max_module_speed = kMaxSpeedMetersPerSecond
+    max_module_speed = kMaxSpeedMetersPerSecond * 0.8
     module_distance = 0.52705  # in m
     # module_radius_from_center = math.sqrt(pow((module_distance / 2), 2) + pow((module_distance / 2), 2))
     module_radius_from_center = 0.372681
@@ -119,12 +120,12 @@ class VisionConstants:
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.
-    turnkP = 0.05  # Will require tuning. # 0.07
+    turnkP = 0.055  # Will require tuning. # 0.05
     turnkI = 0
     turnkD = 0  # was 0.5
     rangekP = 0.05
     turn_to_target_error_max = 2  # In degrees.
-    min_command = 0.0  # Should be in volts, will require tuning.
+    min_command = 0.09  # Should be in volts, will require tuning.
     shooter_default_speed = 5300  # 4500
     speaker_location_blue = [0, 5.53]
     speaker_location_red = [16.5, 5.53]
@@ -137,16 +138,16 @@ class ShooterConstants:
     top_id = 34
     bottom_id = 33
     current_limit = 38
-    shooter_kFF = 0.000172  # 0.000172
+    shooter_kFF = 0.000165  # 0.000172
     shooter_kP = 0.0002  # 0.0002
     shooter_kD = 0
-    angle_kP = 9  # 4
+    angle_kP = 10.5  # 4
     angle_kI = 0.00015
     feeder_speed = 0.9
     threshold = 200  # 500
     threshold_ang = 0.003  # 0.01
     threshold_fired = 30
-    trim = -0.015
+    trim = -0.005
 
 
 class GlobalVariables:

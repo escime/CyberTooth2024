@@ -15,6 +15,15 @@ from wpimath.trajectory import TrapezoidProfile
 
 
 class VisionSubsystem(commands2.Subsystem):
+    lookup_distance_m = [4.5, 4.12, 3.70, 2.70, 2.40, 1.89, 1.70, 1.25]
+    lookup_distance_est = [60, 57, 55, 50, 45, 40, 30, 20]
+    lookup_angle = [0.766, 0.763, 0.758, 0.745, 0.740, 0.730, 0.720, 0.710]
+
+    # lookup_dist = [65.02, 60.10, 58, 55.07, 50.0, 49]
+    # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.749, 0.747]
+    # lookup_dist_m = [5, 4.83, 3.78, 3.53, 3.0866, 2.4222]
+    # lookup_angle = [0.79, 0.78, 0.77, 0.76, 0.758, 0.749]
+
     tv = 0.0
     # tvf = 0.0
     ta = 0.0
@@ -150,13 +159,12 @@ class VisionSubsystem(commands2.Subsystem):
                 if self.has_targets():  # If an AprilTag is visible,
                     vision_estimate = self.vision_estimate_pose()
                     current_position = self.robot_drive.get_pose()
-                    if abs(current_position.x - vision_estimate.x) < 5 and \
-                            abs(current_position.y - vision_estimate.y) < 5:  # Check if poses are within 10m.
-                        # TODO Check if this works smh
+                    if abs(current_position.x - vision_estimate.x) < 20 and \
+                            abs(current_position.y - vision_estimate.y) < 20:  # Check if poses are within 20m.
                         if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.25 and \
                            abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.25:
-                            # if DriverStation.isTeleopEnabled():
-                            self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                            if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
+                                self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -234,12 +242,12 @@ class VisionSubsystem(commands2.Subsystem):
     def rotate_to_target(self, drive: DriveSubsystem, x_speed: float, y_speed: float) -> None:
         """Aim at target (for shooter.)"""
         if self.has_targets():
-            if self.tx + 5 < -VisionConstants.turn_to_target_error_max:
-                rotate_output = self.turn_to_target_controller.calculate(-5, self.tx) - VisionConstants.min_command
+            if self.tx + 3 < -VisionConstants.turn_to_target_error_max:
+                rotate_output = self.turn_to_target_controller.calculate(-3, self.tx) - VisionConstants.min_command
                 self.target_locked = False
                 # print("Tx too low! Output: " + str(rotate_output))
-            elif self.tx + 5 > VisionConstants.turn_to_target_error_max:
-                rotate_output = self.turn_to_target_controller.calculate(-5, self.tx) + VisionConstants.min_command
+            elif self.tx + 3 > VisionConstants.turn_to_target_error_max:
+                rotate_output = self.turn_to_target_controller.calculate(-3, self.tx) + VisionConstants.min_command
                 self.target_locked = False
                 # print("Tx too high! Output: " + str(rotate_output))
             else:
@@ -286,9 +294,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_angle(self):
         """Calculate shooter speed from range to target."""
-        lookup_dist = [65.02, 60.10, 58, 55.07, 50.0]
-        # lookup_angle = [0.772, 0.765, 0.756, 0.74]
-        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_dist = self.lookup_distance_est
+        lookup_angle = self.lookup_angle
         if self.has_targets():
             if lookup_dist[-1] <= self.calculate_range_with_tag() <= lookup_dist[0]:
                 solution = -1
@@ -366,8 +373,9 @@ class VisionSubsystem(commands2.Subsystem):
                              math.pow(drive.get_pose().y - VisionConstants.speaker_location_red[1], 2))
 
     def range_to_angle_m(self, drive: DriveSubsystem) -> float:
-        lookup_dist = [5, 4.83, 3.78, 3.53, 3.0866, 2.4222]
-        lookup_angle = [0.79, 0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_dist = self.lookup_distance_m
+        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_angle = self.lookup_angle
 
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
             solution = -1
@@ -390,8 +398,10 @@ class VisionSubsystem(commands2.Subsystem):
             self.vision_shot_bypass = True
 
     def range_to_angle_rand(self, dist: float) -> float:
-        lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
-        lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        # lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
+        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_dist = self.lookup_distance_m
+        lookup_angle = self.lookup_angle
         if lookup_dist[-1] <= dist <= lookup_dist[0]:
             solution = -1
             for x in range(0, len(lookup_dist) - 1):

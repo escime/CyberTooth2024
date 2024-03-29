@@ -6,7 +6,7 @@ from wpilib import DigitalInput, SmartDashboard
 
 class TrapperSubsystem(commands2.Subsystem):
 
-    setpoints = {"stage": 8.3, "trap": 20.5, "amp": 9, "stow": 0}
+    setpoints = {"stage": 8.3, "trap": 20.5, "amp": 9, "stow": 0, "manual_off": 0, "manual": 0}
 
     def __init__(self) -> None:
         super().__init__()

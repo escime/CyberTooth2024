@@ -101,7 +101,7 @@ class DriveSubsystem(commands2.Subsystem):
             self.get_chassis_speeds,
             self.drive_by_chassis_speeds,
             HolonomicPathFollowerConfig(
-                PIDConstants(AutoConstants.kPXController, 0, AutoConstants.kDXController),
+                PIDConstants(AutoConstants.kPXController, AutoConstants.kIXController, AutoConstants.kDXController),
                 PIDConstants(AutoConstants.kPThetaController, 0, 0),
                 AutoConstants.max_module_speed,
                 AutoConstants.module_radius_from_center,
@@ -131,7 +131,7 @@ class DriveSubsystem(commands2.Subsystem):
         self.alpha = 0
 
         # Configuration for kalman filter confidence
-        self.m_odometry.setVisionMeasurementStdDevs((0.7, 0.7, 999999999))
+        self.m_odometry.setVisionMeasurementStdDevs((0.2, 0.2, 999999999))  # was 0.7
 
     # Create Field2d object to display/track robot position.
     m_field = Field2d()
@@ -342,6 +342,13 @@ class DriveSubsystem(commands2.Subsystem):
                                        SwerveModulePosition(0, self.m_BL_position.angle),
                                        SwerveModulePosition(0, self.m_BR_position.angle)),
                                       pose)
+
+    def reset_odo_and_gyro(self, pose: Pose2d):
+        if self.get_path_flip():
+            self.gyro.setYaw(180)
+        else:
+            self.gyro.setYaw(0)
+        self.reset_odometry(pose)
 
     def reset_position_no_rotation(self, location: Translation2d):
         if DriverStation.getAlliance() == DriverStation.Alliance.kRed:

@@ -20,7 +20,7 @@ class ShootVisionFeed(Command):
         self.addRequirements(intake)
         self.addRequirements(trapper)
         self.target_locked = False
-        self.ready_buffer = [False] * 10
+        self.ready_buffer = [False] * 15
 
     def initialize(self):
         self.target_locked = False

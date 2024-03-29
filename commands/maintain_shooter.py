@@ -18,7 +18,7 @@ class MaintainShooter(Command):
             self.shooter.set_unknown_setpoint(self.viz.range_to_angle_m(self.drive),
                                               VisionConstants.shooter_default_speed)
         else:
-            self.shooter.set_known_setpoint("readied")
+            self.shooter.set_known_setpoint("podium")
 
     def isFinished(self) -> bool:
         return False
