@@ -45,7 +45,7 @@ class DriveConstants:
 
     balance_PID = [0.01, 0, 0]
 
-    slew_rate_drive = 110  # 50
+    slew_rate_drive = 130  # 50  # 110
     slew_rate_turn = 0
 
 
@@ -53,10 +53,10 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 6  # Previously 5
+    kPXController = 5  # Previously 5
     kIXController = 0
     kDXController = 0
-    kPThetaController = 6  # Previously 3
+    kPThetaController = 5  # Previously 3
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond * 0.8
@@ -97,6 +97,7 @@ class TrapperConstants:
     arm_limit = 60
     climb_limit = 60
     trap_speed = 0.5
+    shoot_speed = 0.5
     amp_speed = 0.4
     climber_preset = 270
     climber_preset_2 = 270

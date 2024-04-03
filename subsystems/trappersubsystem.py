@@ -48,7 +48,7 @@ class TrapperSubsystem(commands2.Subsystem):
         # Tell robot it's not climbing
         self.is_climbing = False
 
-        self.note_acquisition_buffer = [False] * 7
+        self.note_acquisition_buffer = [False] * 4
 
         # self.mech = Mechanism2d(6, 6)
         # self.mech_root = self.mech.getRoot("core", 3, 3)
@@ -80,7 +80,7 @@ class TrapperSubsystem(commands2.Subsystem):
 
     def advance(self) -> None:
         """Advance the NOTE to the shooter."""
-        self.trap.set(TrapperConstants.trap_speed)
+        self.trap.set(TrapperConstants.shoot_speed)
 
     def score_in_amp(self, inverted: bool) -> None:
         """Score the NOTE in the AMP by running the trap intake backwards."""

@@ -6,10 +6,10 @@ from wpilib import SmartDashboard
 
 class ShooterSubsystem(commands2.Subsystem):
 
-    shooter_setpoints = {"stow": 0, "subwoofer": 5000, "podium": 5300, "readied": 2000, "test": 5300, "feed": 3750,
+    shooter_setpoints = {"stow": 0, "subwoofer": 5300, "podium": 5300, "readied": 2000, "test": 5300, "feed": 3750,
                          "passthrough": 2000}
     # angle_setpoints = {"stow": 0.867, "subwoofer": 0.682, "podium": 0.622, "readied": 0.7, "test": 0.736}
-    angle_setpoints = {"stow": 0.867, "subwoofer": 0.711, "podium": 0.75, "readied": 0.79, "test": 0.765, "feed": 0.73,
+    angle_setpoints = {"stow": 0.867, "subwoofer": 0.705, "podium": 0.75, "readied": 0.79, "test": 0.765, "feed": 0.73,
                        "passthrough": 0.765}
     # previous subwoofer 0.710
 

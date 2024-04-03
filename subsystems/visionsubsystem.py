@@ -15,9 +15,9 @@ from wpimath.trajectory import TrapezoidProfile
 
 
 class VisionSubsystem(commands2.Subsystem):
-    lookup_distance_m = [4.5, 4.12, 3.70, 2.70, 2.40, 1.89, 1.70, 1.25]
+    lookup_distance_m = [4.5, 4.12, 3.70, 2.70, 2.40, 1.89, 1.70, 1.25, 0]
     lookup_distance_est = [60, 57, 55, 50, 45, 40, 30, 20]
-    lookup_angle = [0.766, 0.763, 0.758, 0.745, 0.740, 0.730, 0.720, 0.710]
+    lookup_angle = [0.766, 0.763, 0.758, 0.745, 0.740, 0.730, 0.720, 0.705, 0.705]
 
     # lookup_dist = [65.02, 60.10, 58, 55.07, 50.0, 49]
     # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.749, 0.747]
@@ -159,12 +159,12 @@ class VisionSubsystem(commands2.Subsystem):
                 if self.has_targets():  # If an AprilTag is visible,
                     vision_estimate = self.vision_estimate_pose()
                     current_position = self.robot_drive.get_pose()
-                    if abs(current_position.x - vision_estimate.x) < 20 and \
-                            abs(current_position.y - vision_estimate.y) < 20:  # Check if poses are within 20m.
-                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.25 and \
-                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.25:
-                            if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
-                                self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                    if abs(current_position.x - vision_estimate.x) < 12 and \
+                            abs(current_position.y - vision_estimate.y) < 12:  # Check if poses are within 12m.
+                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
+                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
+                            # if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
+                            self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,

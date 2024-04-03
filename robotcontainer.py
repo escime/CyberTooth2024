@@ -105,7 +105,7 @@ class RobotContainer:
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
                                "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline",
-                               "C_Score3_Midline", "Chaos"]
+                               "C_Score3_Midline", "Chaos", "B_Score4.5"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
