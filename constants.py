@@ -53,10 +53,10 @@ class AutoConstants:
     kMaxSpeedMetersPerSecond = DriveConstants.kMaxSpeed
     kMaxAccelerationMetersPerSecondSquared = 0.5
 
-    kPXController = 5  # Previously 5
+    kPXController = 5.2  # Previously 5
     kIXController = 0
     kDXController = 0
-    kPThetaController = 5  # Previously 3
+    kPThetaController = 5.2  # Previously 3
     kThetaControllerConstraints = TrapezoidProfileRadians.Constraints(kMaxSpeedMetersPerSecond,
                                                                       kMaxAccelerationMetersPerSecondSquared)
     max_module_speed = kMaxSpeedMetersPerSecond * 0.8
