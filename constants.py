@@ -7,6 +7,8 @@ import math
 from wpimath.geometry import Translation2d, Pose2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
+from phoenix6.configs import Slot0Configs
+from phoenix6.hardware import TalonFX
 
 
 class DriveConstants:
@@ -155,3 +157,59 @@ class GlobalVariables:
     # This really shouldn't go here, but I'm trying to fix something really bad. This is also very stupid.
     current_vision = Pose2d(0, 0, 0)
     timestamp = 0
+
+
+class TunerConstants:
+    steer_gains = Slot0Configs().with_k_p(100).with_k_i(0).with_k_d(0.05).with_k_s(0).with_k_v(1.5).with_k_a(0)
+    drive_gains = Slot0Configs().with_k_p(3).with_k_i(0).with_k_d(0).with_k_s(0).with_k_v(0).with_k_a(0)
+
+    steer_closed_loop_output = None  # TODO Figure out how to implement this
+    drive_closed_loop_output = None  # TODO Figure out how to implement this
+
+    # Stator current at which the wheels start to slip.
+    k_slip_current_A = 150.0
+
+    # Theoretical free speed (m/s) at 12V applied output.
+    k_speed_at_12_volts_Mps = 5.0
+
+    # Every one rotation of the azimuth results in k_couple_ratio drive motor turns.
+    k_couple_ratio = 3.5
+
+    k_drive_gear_ratio = 6.12
+    k_steer_gear_ratio = 21.43
+    k_wheel_radius_inches = 2
+
+    k_steer_motor_reversed = True
+    k_invert_left_side = False
+    k_invert_right_side = True
+
+    k_can_bus_name = "rio"
+    k_pigeon_id = 9
+
+    k_front_left_drive_motor_id = 10
+    k_front_left_steer_motor_id = 11
+    k_front_left_encoder_id = 12
+    k_front_left_encoder_offset = 0
+    k_front_left_x_pos_in = 10.375
+    k_front_left_y_pos_in = 10.375
+
+    k_front_right_drive_motor_id = 13
+    k_front_right_steer_motor_id = 14
+    k_front_right_encoder_id = 15
+    k_front_right_encoder_offset = 0
+    k_front_right_x_pos_in = 10.375
+    k_front_right_y_pos_in = -10.375
+
+    k_back_left_drive_motor_id = 16
+    k_back_left_steer_motor_id = 17
+    k_back_left_encoder_id = 18
+    k_back_left_encoder_offset = 0
+    k_back_left_x_pos_in = -10.375
+    k_back_left_y_pos_in = 10.375
+
+    k_back_right_drive_motor_id = 19
+    k_back_right_steer_motor_id = 20
+    k_back_right_encoder_id = 21
+    k_back_right_encoder_offset = 0
+    k_back_right_x_pos_in = -10.375
+    k_back_right_y_pos_in = -10.375

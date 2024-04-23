@@ -87,16 +87,6 @@ class VisionSubsystem(commands2.Subsystem):
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
         self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)
-        # self.json_val = self.limelight_table.getEntry("json").getString("0")  # Grab the entire json pull as a string.
-        # first_index = str(self.json_val).find("\"ts\"")  # Locate the first string index for timestamp.
-        # adjusted_json = str(self.json_val)[first_index + 5:]  # Substring the JSON to remove everything before timestamp
-        # timestamp_str = adjusted_json[:adjusted_json.find(",")]  # Substring out the timestamp.
-        # try:
-        #     self.timestamp = float(timestamp_str)  # Update timestamp if JSON parse is successful.
-        # except ValueError:
-        #     self.timestamp = -1
-        # Calculate latency based on Limelight Timestamp.
-        # self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
 
     def update_values_safe(self):
         """Update relevant values from LL NT to robot variables."""
@@ -133,6 +123,11 @@ class VisionSubsystem(commands2.Subsystem):
 
         return Pose2d(Translation2d(bot_x, bot_y), Rotation2d.fromDegrees(rotation_z))
 
+    def vision_estimate_pose_megatag2(self) -> Pose2d:
+        botpose = self.limelight_table.getEntry("botpose_wpiblue-megatag2").getDoubleArray([0.0, 0.0, 0.0, 0.0, 0.0,
+                                                                                            0.0, 0.0])
+        self.timestamp = self.timer.getFPGATimestamp() - (botpose[6] / 1000.0)
+
 #     def get_latency(self):
 #         return Timer.getFPGATimestamp() - wpimath.units.millisecondsToSeconds(self.tl)
 
@@ -149,6 +144,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
+        self.limelight_table.putNumberArray("robot_orientation_set", [self.robot_drive.get_heading(), 0, 0, 0, 0, 0])
+
         if self.vision_odo:  # Enable vision-based odometry.
             if self.limelight_table.getNumber("camMode", -1) != 0:  # If camera not in vision mode,
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
