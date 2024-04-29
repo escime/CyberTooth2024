@@ -46,7 +46,7 @@ class ShootVisionWhileMoving(Command):
             self.set_lookahead_range()
             # self.shooter.set_unknown_setpoint(self.vision.no_sight_range_to_angle(self.drive),
             #                                   VisionConstants.shooter_default_speed)
-            if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(self.drive):
+            if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(4, self.drive):
                 self.ready_buffer[0] = True
             else:
                 self.ready_buffer[0] = False

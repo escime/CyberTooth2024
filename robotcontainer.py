@@ -37,6 +37,7 @@ from commands.climb_s2 import ClimbS2
 from commands.maintain_shooter import MaintainShooter
 from commands.shoot_while_moving import ShootVisionWhileMoving
 from commands.shoot_vision_feed import ShootVisionFeed
+from commands.shoot_odo_only import ShootVisionOdo
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 from commands.passthrough import Passthrough
@@ -85,7 +86,7 @@ class RobotContainer:
                     self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
                     self.driver_controller_raw.get_axis("RX", 0.06) * -1,
-                    7,
+                    3,  # 7
                     0.2
                 ), self.robot_drive
             ))
@@ -105,7 +106,7 @@ class RobotContainer:
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
                                "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline",
-                               "C_Score3_Midline", "Chaos", "B_Score4.5"]
+                               "C_Score3_Midline", "Chaos", "B_Score4.5", "ChoreoTesting"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -114,6 +115,10 @@ class RobotContainer:
 
             SmartDashboard.putData("Debug Mode On", DebugMode(self.robot_drive, True))
             SmartDashboard.putData("Debug Mode Off", DebugMode(self.robot_drive, False))
+
+            SmartDashboard.putData("Shooter Subsystem", self.shooter)
+            SmartDashboard.putData("Trapper Subsystem", self.trapper)
+            SmartDashboard.putData("Drive Subsystem", self.robot_drive)
 
         # Perform setup for when tuning mode is enabled.
         else:
@@ -146,9 +151,8 @@ class RobotContainer:
                                        self.robot_drive, self.timer, self.driver_controller_raw, 10, 0.4))
 
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.3)).whileTrue(
-            commands2.SequentialCommandGroup(
-                ShootVisionFeed(self.shooter, self.robot_drive, self.intake, self.trapper),
-                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer)))
+            ShootVisionFeed(self.shooter, self.robot_drive, self.intake, self.trapper, self.vision_system,
+                            self.driver_controller_raw))
 
         # Hold for Slow Mode, variable based on depth of Trigger.
         button.Trigger(lambda: self.driver_controller_raw.get_trigger("R", 0.05)).whileTrue(
@@ -160,18 +164,18 @@ class RobotContainer:
                 self.driver_controller_raw.refine_trigger("R", 0.05, 0.8, 0.3)), self.robot_drive))
 
         # Press any direction on the D-pad to enable PID snap to that equivalent angle based on field orientation
-        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
-            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                270
-            ), self.robot_drive))
-        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
-            commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-                self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-                self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                90
-            ), self.robot_drive))
+        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
+        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+        #         270
+        #     ), self.robot_drive))
+        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
+        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
+        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+        #         90
+        #     ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("N")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
@@ -187,13 +191,13 @@ class RobotContainer:
         # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onTrue(
         #     self.robot_drive.follow_path_command([1.84, 7.80, 270], 270)
         # )
-        button.Trigger(lambda: self.driver_controller_raw.get_button("A")).toggleOnTrue(
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 60
             ), self.robot_drive))
-        button.Trigger(lambda: self.driver_controller_raw.get_button("X")).toggleOnTrue(
+        button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
@@ -206,7 +210,7 @@ class RobotContainer:
         # button.Trigger(lambda: self.driver_controller_raw.get_button("A")).whileTrue(
         #     self.robot_drive.follow_path_command([4.7, 4.3, 120], 120))
 
-        # Reset robot pose to center of the field.
+        # Reset robot pose to subwoofer.
         button.Trigger(lambda: self.driver_controller_raw.get_button("Y")).whileTrue(
             commands2.cmd.run(lambda: self.vision_system.reset_hard_odo(self.robot_drive), self.vision_system,
                               self.robot_drive))
@@ -237,24 +241,26 @@ class RobotContainer:
 
         # Hold to autonomously shoot a NOTE.
         button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
-                        self.leds, self.timer),
+            ShootVisionOdo(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
+                           self.leds, self.timer),
             commands2.ParallelCommandGroup(
                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer),
                ShootLEDs(self.leds, "slow"))))
 
         # Press to prepare to place a NOTE in the AMP.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).toggleOnTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("A") or
+                       self.driver_controller_raw.get_button("A")).toggleOnTrue(
             ReadyAMP(self.trapper, self.shooter, self.robot_drive, self.intake))
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_button("X") or
+                       self.driver_controller_raw.get_button("X")).onTrue(
             ScoreAMP(self.trapper, self.robot_drive))
 
         # Press to toggle between auto shooting and manual shooting from the podium
-        button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
-            commands2.cmd.runOnce(lambda: self.vision_system.toggle_vision_shot_bypass(), self.vision_system))
+        # button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
+        #     commands2.cmd.runOnce(lambda: self.vision_system.toggle_vision_shot_bypass(), self.vision_system))
 
         # When a NOTE enters the trapper, flash all LEDs green.
         button.Trigger(lambda: self.trapper.get_note_acquired() and
@@ -305,7 +311,8 @@ class RobotContainer:
             commands2.cmd.runOnce(lambda: self.shooter.increment_trim(-0.001), self.shooter))
 
         # Hold to intake a NOTE.
-        button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1)).whileTrue(
+        button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1) or
+                       self.driver_controller_raw.get_button("B")).whileTrue(
             Intake(self.intake, self.trapper, True, self.timer))
 
         # Hold to spit out a NOTE.

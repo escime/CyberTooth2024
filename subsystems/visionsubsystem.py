@@ -147,6 +147,35 @@ class VisionSubsystem(commands2.Subsystem):
             robot_drive.gyro.setYaw(0)
             robot_drive.reset_odometry(Pose2d(Translation2d(15.24, 5.54), Rotation2d.fromDegrees(180)))
 
+    def push_mt2_rotation(self) -> None:
+        self.limelight_table.putNumberArray("robot_orientation_set",
+                                            [self.robot_drive.get_heading_odo().degrees(), 0, 0, 0, 0, 0])
+
+    def update_pose_with_vision(self) -> None:
+        """Botpose Array Information:
+        [0] X, meters
+        [1] Y, meters
+        [2] Z, meters
+        [3] Roll, degrees
+        [4] Pitch, degrees
+        [5] Yaw, degrees
+        [6] Total latency, milliseconds
+        [7] Tag Count
+        [8] Tag Span, ???
+        [9] Average Tag Distance from Camera, meters
+        [10] Average Tag Area, % of image"""
+        botpose = self.limelight_table.getEntry("botpose_orb_wpiblue").getDoubleArray([0.0, 0.0, 0.0, 0.0,
+                                                                                       0.0, 0.0, 0.0, 0.0,
+                                                                                       0.0, 0.0, 0.0, 0.0])
+
+        pose = Pose2d(Translation2d(botpose[0], botpose[1]), Rotation2d.fromDegrees((botpose[5] + 360) % 360))
+        timestamp = self.timer.getFPGATimestamp() - (botpose[6] / 1000.0)
+
+        if botpose[9] < 10 and botpose[7] > 1 and \
+            abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
+                abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
+            self.robot_drive.add_vision(pose, timestamp)
+
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
         if self.vision_odo:  # Enable vision-based odometry.
@@ -154,17 +183,19 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
             if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
-            if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.5s since last update,
+            self.push_mt2_rotation()
+            if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.2s since last update,
                 self.update_values()  # Update limelight values.
                 if self.has_targets():  # If an AprilTag is visible,
-                    vision_estimate = self.vision_estimate_pose()
-                    current_position = self.robot_drive.get_pose()
-                    if abs(current_position.x - vision_estimate.x) < 12 and \
-                            abs(current_position.y - vision_estimate.y) < 12:  # Check if poses are within 12m.
-                        if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
-                           abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
-                            # if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
-                            self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                    self.update_pose_with_vision()
+                    # vision_estimate = self.vision_estimate_pose()
+                    # current_position = self.robot_drive.get_pose()
+                    # if abs(current_position.x - vision_estimate.x) < 12 and \
+                    #         abs(current_position.y - vision_estimate.y) < 12:  # Check if poses are within 12m.
+                    #     if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
+                    #        abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
+                    #         # if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
+                    #         self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -338,10 +369,10 @@ class VisionSubsystem(commands2.Subsystem):
                 alpha = (-1 * math.degrees(math.atan2(y, -x))) + 180
             else:
                 alpha = math.degrees(math.atan2(-y, -x)) + 180
-        self.alpha = alpha - 5
-        drive.snap_drive(x_speed, y_speed, alpha - 5)
+        self.alpha = alpha - 3
+        drive.snap_drive(x_speed, y_speed, alpha - 3)
 
-    def get_aligned_odo(self, drive: DriveSubsystem) -> bool:
+    def get_aligned_odo(self, threshold: float, drive: DriveSubsystem) -> bool:
         heading = drive.get_heading_odo().degrees()
         # if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
         #     heading = heading + 180
@@ -358,8 +389,8 @@ class VisionSubsystem(commands2.Subsystem):
         # print("Alpha Min: " + str(adjusted_alpha - 2))
         # print("Alpha Max: " + str(adjusted_alpha + 2))
         # print("Heading: " + str(heading))
-        if adjusted_alpha - 2 < heading < \
-                adjusted_alpha + 2:
+        if adjusted_alpha - threshold < heading < \
+                adjusted_alpha + threshold:
             return True
         else:
             return False
@@ -376,6 +407,22 @@ class VisionSubsystem(commands2.Subsystem):
         lookup_dist = self.lookup_distance_m
         # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         lookup_angle = self.lookup_angle
+
+        if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
+            solution = -1
+            for x in range(0, len(lookup_dist) - 1):
+                if lookup_dist[x + 1] <= self.range_to_speaker_odo(drive) < lookup_dist[x]:
+                    m = (lookup_angle[x + 1] - lookup_angle[x]) / (lookup_dist[x + 1] - lookup_dist[x])
+                    b = lookup_angle[x] - (m * lookup_dist[x])
+                    solution = (m * self.range_to_speaker_odo(drive)) + b
+            return solution
+        else:
+            return -1
+
+    def range_to_feed(self, drive: DriveSubsystem) -> float:
+        lookup_dist = [11, 5, 4.999, 1]
+        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
+        lookup_angle = [0.73, 0.705, 0.76, 0.76]
 
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
             solution = -1

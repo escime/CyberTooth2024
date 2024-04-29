@@ -162,6 +162,7 @@ class ShooterSubsystem(commands2.Subsystem):
         SmartDashboard.putBoolean("Shooter At Setpoint", self.get_ready_to_shoot())
         SmartDashboard.putBoolean("Shooter Up to Speed", self.get_at_speed())
         SmartDashboard.putBoolean("Shooter At Angle", self.get_at_angle())
+        SmartDashboard.putNumber("Shooter Current Draw (Top)", self.shooter_top.getOutputCurrent())
         # SmartDashboard.putNumber("Lower Bound", self.shooter_setpoint - ShooterConstants.threshold)
         # SmartDashboard.putNumber("Upper Bound", self.shooter_setpoint + ShooterConstants.threshold)
 
