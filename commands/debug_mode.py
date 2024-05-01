@@ -1,16 +1,16 @@
 from commands2 import Command
-from subsystems.drivesubsystem import DriveSubsystem
+from subsystems.phoenixdrivesubsystem import PhoenixDriveSubsystem
 
 
 class DebugMode(Command):
-    def __init__(self, robot_drive: DriveSubsystem, on: bool):
+    def __init__(self, drive: PhoenixDriveSubsystem, on: bool):
         super().__init__()
-        self.robot_drive = robot_drive
-        self.addRequirements(robot_drive)
+        self.drive = drive
+        self.addRequirements(drive)
         self.intent = on
 
     def execute(self) -> None:
-        self.robot_drive.debug_toggle(self.intent)
+        self.drive.debug_switch(self.intent)
 
     def runsWhenDisabled(self) -> bool:
         return True

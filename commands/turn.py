@@ -1,14 +1,14 @@
 from commands2 import Command
-from subsystems.drivesubsystem import DriveSubsystem
+from subsystems.phoenixdrivesubsystem import PhoenixDriveSubsystem
 from wpilib import Timer
 
 
 class Turn(Command):
-    def __init__(self, robot_drive: DriveSubsystem, target, timer: Timer):
+    def __init__(self, drive: PhoenixDriveSubsystem, target, timer: Timer):
         super().__init__()
-        self.robot_drive = robot_drive
+        self.drive = drive
         self.target = target
-        self.addRequirements(robot_drive)
+        self.addRequirements(drive)
         self.timer = timer
         self.start_time = 0
 
@@ -17,10 +17,10 @@ class Turn(Command):
         self.start_time = self.timer.get()
 
     def execute(self) -> None:
-        self.robot_drive.snap_drive(0, 0, self.target)
+        self.drive.snap_drive(0, 0, self.target)
 
     def isFinished(self) -> bool:
-        if self.target - 5 < abs(self.robot_drive.get_heading()) < self.target + 5 or \
+        if self.target - 5 < abs(self.drive.get_heading()) < self.target + 5 or \
                 self.timer.get() - 3 > self.start_time:
             return True
         else:

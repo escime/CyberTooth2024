@@ -8,7 +8,7 @@ from wpimath.geometry import Translation2d, Pose2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
 from phoenix6.configs import Slot0Configs
-from phoenix6.hardware import TalonFX
+from wpimath.units import inchesToMeters
 
 
 class DriveConstants:
@@ -160,11 +160,11 @@ class GlobalVariables:
 
 
 class TunerConstants:
+    enable_foc = False
+    gyro_id = 9
+
     steer_gains = Slot0Configs().with_k_p(100).with_k_i(0).with_k_d(0.05).with_k_s(0).with_k_v(1.5).with_k_a(0)
     drive_gains = Slot0Configs().with_k_p(3).with_k_i(0).with_k_d(0).with_k_s(0).with_k_v(0).with_k_a(0)
-
-    steer_closed_loop_output = None  # TODO Figure out how to implement this
-    drive_closed_loop_output = None  # TODO Figure out how to implement this
 
     # Stator current at which the wheels start to slip.
     k_slip_current_A = 150.0
@@ -172,17 +172,27 @@ class TunerConstants:
     # Theoretical free speed (m/s) at 12V applied output.
     k_speed_at_12_volts_Mps = 5.0
 
+    # Simulated drive voltage required to overcome friction.
+    k_drive_friction_voltage = 0.2
+
+    # Simulated steer voltage required to overcome friction.
+    k_steer_friction_voltage = 0.2
+
+    # Simulated drive inertia in kilogram meters squared.
+    k_drive_inertia = 100
+
+    # Simulated azimuthal inertia in kilogram meters squared.
+    k_steer_inertia = 100
+
     # Every one rotation of the azimuth results in k_couple_ratio drive motor turns.
     k_couple_ratio = 3.5
 
+    # Important module constants.
     k_drive_gear_ratio = 6.12
     k_steer_gear_ratio = 21.43
     k_wheel_radius_inches = 2
 
-    k_steer_motor_reversed = True
-    k_invert_left_side = False
-    k_invert_right_side = True
-
+    # Critical ids for configuring the Pigeon 2.0.
     k_can_bus_name = "rio"
     k_pigeon_id = 9
 
@@ -192,6 +202,8 @@ class TunerConstants:
     k_front_left_encoder_offset = 0
     k_front_left_x_pos_in = 10.375
     k_front_left_y_pos_in = 10.375
+    k_front_left_drive_motor_inverted = False
+    k_front_left_steer_motor_inverted = False
 
     k_front_right_drive_motor_id = 13
     k_front_right_steer_motor_id = 14
@@ -199,6 +211,8 @@ class TunerConstants:
     k_front_right_encoder_offset = 0
     k_front_right_x_pos_in = 10.375
     k_front_right_y_pos_in = -10.375
+    k_front_right_drive_motor_inverted = False
+    k_front_right_steer_motor_inverted = False
 
     k_back_left_drive_motor_id = 16
     k_back_left_steer_motor_id = 17
@@ -206,6 +220,8 @@ class TunerConstants:
     k_back_left_encoder_offset = 0
     k_back_left_x_pos_in = -10.375
     k_back_left_y_pos_in = 10.375
+    k_back_left_drive_motor_inverted = False
+    k_back_left_steer_motor_inverted = False
 
     k_back_right_drive_motor_id = 19
     k_back_right_steer_motor_id = 20
@@ -213,3 +229,14 @@ class TunerConstants:
     k_back_right_encoder_offset = 0
     k_back_right_x_pos_in = -10.375
     k_back_right_y_pos_in = -10.375
+    k_back_right_drive_motor_inverted = False
+    k_back_right_steer_motor_inverted = False
+
+    fl_translation = Translation2d(inchesToMeters(k_front_left_x_pos_in), inchesToMeters(k_front_left_y_pos_in))
+    fr_translation = Translation2d(inchesToMeters(k_front_right_x_pos_in), inchesToMeters(k_front_right_y_pos_in))
+    bl_translation = Translation2d(inchesToMeters(k_back_left_x_pos_in), inchesToMeters(k_back_left_y_pos_in))
+    br_translation = Translation2d(inchesToMeters(k_back_right_x_pos_in), inchesToMeters(k_back_right_y_pos_in))
+    kinematics = SwerveDrive4Kinematics(fl_translation, fr_translation, bl_translation, br_translation)
+
+    clt_controller_PID = [0, 0, 0]
+    snap_controller_PID = [0, 0, 0]
