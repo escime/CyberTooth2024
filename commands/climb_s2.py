@@ -1,6 +1,6 @@
 from commands2 import Command, InterruptionBehavior
 from subsystems.trappersubsystem import TrapperSubsystem
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 from subsystems.drivesubsystem import DriveSubsystem
 from constants import TrapperConstants, DriveConstants
 
@@ -18,9 +18,9 @@ class ClimbS2(Command):
 
     def initialize(self):
         self.trapper.set_arm("trap")
+        self.leds.set_state("rainbow")
 
     def execute(self):
-        self.leds.rainbow_shift()
         if self.trapper.climb_encoder.getPosition() < TrapperConstants.climber_preset_2:
             self.trapper.run_climb(1)
         else:

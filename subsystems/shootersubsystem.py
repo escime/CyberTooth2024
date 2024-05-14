@@ -47,8 +47,8 @@ class ShooterSubsystem(commands2.Subsystem):
         self.feeder = CANSparkMax(32, CANSparkMax.MotorType.kBrushless)
         self.feeder.setIdleMode(CANSparkMax.IdleMode.kBrake)
 
-        self.shooter_top.setControlFramePeriodMs(60)
-        self.shooter_bottom.setControlFramePeriodMs(60)
+        self.shooter_top.setControlFramePeriodMs(50)
+        self.shooter_bottom.setControlFramePeriodMs(50)
         self.angler.setControlFramePeriodMs(60)
         self.feeder.setControlFramePeriodMs(120)
 
@@ -62,6 +62,8 @@ class ShooterSubsystem(commands2.Subsystem):
         self.trim = ShooterConstants.trim
 
         self.default_bypass = False
+        self.current_detection_buffer_top = [False] * 20
+        self.current_detection_buffer_bottom = [False] * 20
 
     def shoot(self) -> None:
         """Advance Note into shooter wheels."""
@@ -151,6 +153,12 @@ class ShooterSubsystem(commands2.Subsystem):
         self.shooter_top.set(-0.2)
         self.shooter_bottom.set(-0.2)
 
+    def get_note_shot(self) -> bool:
+        if self.shooter_top.getOutputCurrent() >= 55 or self.shooter_bottom.getOutputCurrent() >= 55:
+            return True
+        else:
+            return False
+
     def periodic(self) -> None:
         """Any periodic routines for the shooter."""
         SmartDashboard.putNumber("Top Shooter Speed", self.shooter_encoder_top.getVelocity())
@@ -163,6 +171,8 @@ class ShooterSubsystem(commands2.Subsystem):
         SmartDashboard.putBoolean("Shooter Up to Speed", self.get_at_speed())
         SmartDashboard.putBoolean("Shooter At Angle", self.get_at_angle())
         SmartDashboard.putNumber("Shooter Current Draw (Top)", self.shooter_top.getOutputCurrent())
+        SmartDashboard.putNumber("Shooter Current Draw (Bottom)", self.shooter_bottom.getOutputCurrent())
+        SmartDashboard.putBoolean("Note shot?", self.get_note_shot())
         # SmartDashboard.putNumber("Lower Bound", self.shooter_setpoint - ShooterConstants.threshold)
         # SmartDashboard.putNumber("Upper Bound", self.shooter_setpoint + ShooterConstants.threshold)
 

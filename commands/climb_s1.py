@@ -1,6 +1,6 @@
 from commands2 import Command, InterruptionBehavior
 from subsystems.trappersubsystem import TrapperSubsystem
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 from subsystems.intakesubsystem import IntakeSubsystem
 from constants import TrapperConstants
 
@@ -18,9 +18,9 @@ class ClimbS1(Command):
 
     def initialize(self):
         self.trapper.set_arm("stage")
+        self.leds.set_state("rainbow")
 
     def execute(self):
-        self.leds.rainbow_shift()
         self.intake.intake(0.5)
         if self.trapper.climb_encoder.getPosition() < TrapperConstants.climber_preset:
             self.trapper.run_climb(1)

@@ -3,26 +3,18 @@ from ntcore import NetworkTableInstance
 from wpilib import SmartDashboard, DriverStation, Timer
 from wpimath.geometry import Pose2d, Translation2d, Rotation2d
 from subsystems.drivesubsystem import DriveSubsystem
-# from subsystems.ledsubsystem import LEDs
-# from subsystems.shootersubsystem import ShooterSubsystem
-# from subsystems.intakesubsystem import IntakeSubsystem
-# from subsystems.trappersubsystem import TrapperSubsystem
-# from commands.shoot_leds import ShootLEDs
+from subsystems.trappersubsystem import TrapperSubsystem
 from constants import VisionConstants
 import math
 from wpimath.controller import PIDController, ProfiledPIDController
 from wpimath.trajectory import TrapezoidProfile
+from helpers.pose_estimator import PoseEstimator
 
 
 class VisionSubsystem(commands2.Subsystem):
     lookup_distance_m = [4.5, 4.12, 3.70, 2.70, 2.40, 1.89, 1.70, 1.25, 0]
     lookup_distance_est = [60, 57, 55, 50, 45, 40, 30, 20]
     lookup_angle = [0.766, 0.763, 0.758, 0.745, 0.740, 0.730, 0.720, 0.705, 0.705]
-
-    # lookup_dist = [65.02, 60.10, 58, 55.07, 50.0, 49]
-    # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.749, 0.747]
-    # lookup_dist_m = [5, 4.83, 3.78, 3.53, 3.0866, 2.4222]
-    # lookup_angle = [0.79, 0.78, 0.77, 0.76, 0.758, 0.749]
 
     tv = 0.0
     # tvf = 0.0
@@ -50,10 +42,11 @@ class VisionSubsystem(commands2.Subsystem):
     vision_shot_bypass = False
     # txf = 0.0
 
-    def __init__(self, timer: Timer, robot_drive: DriveSubsystem) -> None:
+    def __init__(self, timer: Timer, pose_estimator: PoseEstimator, trapper: TrapperSubsystem) -> None:
         super().__init__()
         self.timer = timer
-        self.robot_drive = robot_drive  # This is structurally not great but necessary for certain features.
+        self.pose_estimator = pose_estimator
+        self.trapper = trapper  # This is to lock out odometry while the arm is moving
         self.limelight_table = NetworkTableInstance.getDefault().getTable("limelight")
         # self.limelight_front = NetworkTableInstance.getDefault().getTable("limelight-front")
         self.record_time = self.timer.get()
@@ -87,16 +80,6 @@ class VisionSubsystem(commands2.Subsystem):
         self.ty = self.limelight_table.getEntry("ty").getDouble(0.0)  # Get height of AprilTag relative to camera.
         self.tx = self.limelight_table.getEntry("tx").getDouble(0.0)  # Get angle offset from AprilTag.
         self.tag_id = self.limelight_table.getEntry("tid").getDouble(0)
-        # self.json_val = self.limelight_table.getEntry("json").getString("0")  # Grab the entire json pull as a string.
-        # first_index = str(self.json_val).find("\"ts\"")  # Locate the first string index for timestamp.
-        # adjusted_json = str(self.json_val)[first_index + 5:]  # Substring the JSON to remove everything before timestamp
-        # timestamp_str = adjusted_json[:adjusted_json.find(",")]  # Substring out the timestamp.
-        # try:
-        #     self.timestamp = float(timestamp_str)  # Update timestamp if JSON parse is successful.
-        # except ValueError:
-        #     self.timestamp = -1
-        # Calculate latency based on Limelight Timestamp.
-        # self.latency = self.timer.getFPGATimestamp() - (self.tl/1000.0) - (self.timestamp/1000.0)
 
     def update_values_safe(self):
         """Update relevant values from LL NT to robot variables."""
@@ -133,23 +116,20 @@ class VisionSubsystem(commands2.Subsystem):
 
         return Pose2d(Translation2d(bot_x, bot_y), Rotation2d.fromDegrees(rotation_z))
 
-#     def get_latency(self):
-#         return Timer.getFPGATimestamp() - wpimath.units.millisecondsToSeconds(self.tl)
-
-    def reset_hard_odo(self, robot_drive: DriveSubsystem):
+    def reset_hard_odo(self, drive: DriveSubsystem):
         """Reset robot odometry based on vision pose. Intended for use only during testing, since there is no auto
         to automatically update the initial pose and the software assumes (0, 0)."""
         # self.robot_drive.reset_odometry(self.vision_estimate_pose())
         if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            robot_drive.gyro.setYaw(0)
-            robot_drive.reset_odometry(Pose2d(Translation2d(1.31, 5.54), Rotation2d.fromDegrees(0)))
+            drive.gyro.setYaw(0)
+            drive.reset_odometry(Pose2d(Translation2d(1.31, 5.54), Rotation2d.fromDegrees(0)))
         else:
-            robot_drive.gyro.setYaw(0)
-            robot_drive.reset_odometry(Pose2d(Translation2d(15.24, 5.54), Rotation2d.fromDegrees(180)))
+            drive.gyro.setYaw(0)
+            drive.reset_odometry(Pose2d(Translation2d(15.24, 5.54), Rotation2d.fromDegrees(180)))
 
     def push_mt2_rotation(self) -> None:
         self.limelight_table.putNumberArray("robot_orientation_set",
-                                            [self.robot_drive.get_heading_odo().degrees(), 0, 0, 0, 0, 0])
+                                            [self.pose_estimator.get_heading().degrees(), 0, 0, 0, 0, 0])
 
     def update_pose_with_vision(self) -> None:
         """Botpose Array Information:
@@ -171,13 +151,12 @@ class VisionSubsystem(commands2.Subsystem):
         pose = Pose2d(Translation2d(botpose[0], botpose[1]), Rotation2d.fromDegrees((botpose[5] + 360) % 360))
         timestamp = self.timer.getFPGATimestamp() - (botpose[6] / 1000.0)
 
-        if botpose[9] < 10 and botpose[7] > 1 and \
-            abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
-                abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
-            self.robot_drive.add_vision(pose, timestamp)
+        if botpose[9] < 10 and botpose[7] >= 1:
+            self.pose_estimator.add_vision(pose, timestamp)
 
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
+        start_time = self.timer.get()
         if self.vision_odo:  # Enable vision-based odometry.
             if self.limelight_table.getNumber("camMode", -1) != 0:  # If camera not in vision mode,
                 self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
@@ -185,17 +164,10 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
             self.push_mt2_rotation()
             if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.2s since last update,
-                self.update_values()  # Update limelight values.
-                if self.has_targets():  # If an AprilTag is visible,
-                    self.update_pose_with_vision()
-                    # vision_estimate = self.vision_estimate_pose()
-                    # current_position = self.robot_drive.get_pose()
-                    # if abs(current_position.x - vision_estimate.x) < 12 and \
-                    #         abs(current_position.y - vision_estimate.y) < 12:  # Check if poses are within 12m.
-                    #     if abs(self.robot_drive.get_field_relative_velocity()[0]) <= 0.5 and \
-                    #        abs(self.robot_drive.get_field_relative_velocity()[1]) <= 0.5:
-                    #         # if DriverStation.isTeleopEnabled():  # Check if robot is in teleop.
-                    #         self.robot_drive.add_vision(vision_estimate, self.timestamp)  # Add vision to kalman filter.
+                if self.trapper.arm_setpoint == self.trapper.setpoints["stow"]:
+                    self.update_values()  # Update limelight values.
+                    if self.has_targets():  # If an AprilTag is visible,
+                        self.update_pose_with_vision()
                 self.record_time = self.timer.get()  # Reset timer.
 
         if not self.vision_odo:  # If robot is in targeting mode,
@@ -214,7 +186,7 @@ class VisionSubsystem(commands2.Subsystem):
         SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
         SmartDashboard.putNumber("Alpha", self.alpha)
         SmartDashboard.putBoolean("Vision Targeting Overridden?", self.vision_shot_bypass)
-        SmartDashboard.putNumber("Range to Speaker Odo", self.range_to_speaker_odo(self.robot_drive))
+        SmartDashboard.putNumber("Vision Periodic Runtime", self.timer.get() - start_time)
         # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())
 
     def toggle_camera(self) -> None:
@@ -236,7 +208,6 @@ class VisionSubsystem(commands2.Subsystem):
     def conditional_instant_update(self, drive: DriveSubsystem) -> None:
         self.update_values()
         if self.has_targets():
-            # drive.reset_odometry(self.vision_estimate_pose())
             drive.reset_position_no_rotation(self.vision_estimate_pose().translation())
 
     def calcs_toggle(self):
@@ -276,11 +247,9 @@ class VisionSubsystem(commands2.Subsystem):
             if self.tx + 3 < -VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(-3, self.tx) - VisionConstants.min_command
                 self.target_locked = False
-                # print("Tx too low! Output: " + str(rotate_output))
             elif self.tx + 3 > VisionConstants.turn_to_target_error_max:
                 rotate_output = self.turn_to_target_controller.calculate(-3, self.tx) + VisionConstants.min_command
                 self.target_locked = False
-                # print("Tx too high! Output: " + str(rotate_output))
             else:
                 rotate_output = 0
                 self.target_locked = True
@@ -372,10 +341,25 @@ class VisionSubsystem(commands2.Subsystem):
         self.alpha = alpha - 3
         drive.snap_drive(x_speed, y_speed, alpha - 3)
 
+    def align_to_coords(self, x_speed: float, y_speed: float, target: [], drive: DriveSubsystem):
+        pose = drive.get_pose()
+        x = pose.x - target[0]
+        y = pose.y - target[1]
+
+        theta = math.degrees(math.atan2(abs(y), abs(x)))
+        if x >= 0 and y >= 0:
+            alpha = -180 + theta
+        elif x < 0 and y >= 0:
+            alpha = -1 * theta
+        elif x >= 0 and y < 0:
+            alpha = 180 - theta
+        else:
+            alpha = theta
+
+        drive.snap_drive_absolute(x_speed, y_speed, alpha)
+
     def get_aligned_odo(self, threshold: float, drive: DriveSubsystem) -> bool:
         heading = drive.get_heading_odo().degrees()
-        # if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-        #     heading = heading + 180
         if self.alpha > 180:
             adjusted_alpha = self.alpha - 180
         else:
@@ -386,9 +370,6 @@ class VisionSubsystem(commands2.Subsystem):
             adjusted_alpha *= -1
         if adjusted_alpha > 180:
             adjusted_alpha = 180 - (adjusted_alpha - 180)
-        # print("Alpha Min: " + str(adjusted_alpha - 2))
-        # print("Alpha Max: " + str(adjusted_alpha + 2))
-        # print("Heading: " + str(heading))
         if adjusted_alpha - threshold < heading < \
                 adjusted_alpha + threshold:
             return True
@@ -405,7 +386,6 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_angle_m(self, drive: DriveSubsystem) -> float:
         lookup_dist = self.lookup_distance_m
-        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         lookup_angle = self.lookup_angle
 
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
@@ -421,7 +401,6 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_feed(self, drive: DriveSubsystem) -> float:
         lookup_dist = [11, 5, 4.999, 1]
-        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         lookup_angle = [0.73, 0.705, 0.76, 0.76]
 
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
@@ -445,8 +424,6 @@ class VisionSubsystem(commands2.Subsystem):
             self.vision_shot_bypass = True
 
     def range_to_angle_rand(self, dist: float) -> float:
-        # lookup_dist = [4.465628, 3.469694, 3.2434, 2.720572, 2.0826]
-        # lookup_angle = [0.78, 0.77, 0.76, 0.758, 0.75]
         lookup_dist = self.lookup_distance_m
         lookup_angle = self.lookup_angle
         if lookup_dist[-1] <= dist <= lookup_dist[0]:
@@ -495,11 +472,9 @@ class VisionSubsystem(commands2.Subsystem):
             if self.tx < -VisionConstants.turn_to_target_error_max:
                 rotate_output = self.mp_ttt_controller.calculate(0, self.tx) - VisionConstants.min_command
                 self.target_locked = False
-                # print("Tx too low! Output: " + str(rotate_output))
             elif self.tx > VisionConstants.turn_to_target_error_max:
                 rotate_output = self.mp_ttt_controller.calculate(0, self.tx) + VisionConstants.min_command
                 self.target_locked = False
-                # print("Tx too high! Output: " + str(rotate_output))
             else:
                 rotate_output = 0
                 self.target_locked = True

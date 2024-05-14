@@ -1,6 +1,6 @@
 from commands2 import Command
 from subsystems.trappersubsystem import TrapperSubsystem
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 
 
 class AlertGPLEDs(Command):
@@ -10,8 +10,8 @@ class AlertGPLEDs(Command):
         self.trapper = trapper
         self.addRequirements(leds)
 
-    def execute(self) -> None:
-        self.leds.green_chaser()
+    def initialize(self):
+        self.leds.set_state("gp_held")
 
     def isFinished(self) -> bool:
         if not self.trapper.get_note_acquired():
@@ -21,3 +21,6 @@ class AlertGPLEDs(Command):
 
     def runsWhenDisabled(self) -> bool:
         return True
+
+    def end(self, interrupted: bool):
+        self.leds.set_state("default")

@@ -19,7 +19,7 @@ class ReturnWheels(Command):
         self.robot_drive.return_wheels_to_zero()
 
     def isFinished(self) -> bool:
-        angle = self.robot_drive.m_FL.get_state().angle.degrees()
+        angle = self.robot_drive.m_FL.get_state_onboard().angle.degrees()
         if 0 < abs(angle) < 10 or 170 < abs(angle) < 190 or 350 < abs(angle) < 360:
             return True
         elif self.timer.get() - 2 > self.start_time:

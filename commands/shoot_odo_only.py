@@ -4,7 +4,7 @@ from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.drivesubsystem import DriveSubsystem
 from subsystems.intakesubsystem import IntakeSubsystem
 from subsystems.trappersubsystem import TrapperSubsystem
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 from constants import VisionConstants
 from wpilib import Timer
 
@@ -20,6 +20,7 @@ class ShootVisionOdo(Command):
         self.intake = intake
         self.trapper = trapper
         self.leds = leds
+        self.addRequirements(leds)
         self.addRequirements(shooter)
         # self.addRequirements(vision)
         self.addRequirements(drive)
@@ -35,6 +36,7 @@ class ShootVisionOdo(Command):
         self.vision.vision_odo_manual(True)
         self.overrun_time = self.timer.get()
         self.target_locked = False
+        self.leds.set_state("align")
 
     def execute(self) -> None:
         if not self.vision.vision_shot_bypass:
@@ -50,9 +52,11 @@ class ShootVisionOdo(Command):
             if all(self.ready_buffer):
                 print("TARGET LOCKED!")
                 self.target_locked = True
+            self.leds.set_misalignment(self.vision.alpha, self.drive.get_heading_odo().degrees())
         else:
             self.shooter.set_known_setpoint("podium")
             self.drive.drive(0, 0, 0, False)
+            self.leds.set_misalignment(0, 0)
 
     def isFinished(self) -> bool:
         if not self.vision.vision_shot_bypass:
@@ -77,3 +81,4 @@ class ShootVisionOdo(Command):
             self.shooter.set_known_setpoint("readied")
         self.vision.vision_odo_manual(True)
         self.target_locked = False
+        self.leds.set_state("default")

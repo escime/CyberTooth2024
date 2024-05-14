@@ -1,5 +1,5 @@
 from commands2 import Command, InterruptionBehavior
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 
 
 class AmpLEDs(Command):
@@ -8,11 +8,11 @@ class AmpLEDs(Command):
         self.leds = leds
         self.addRequirements(leds)
 
-    def execute(self) -> None:
-        self.leds.amp_timer()
+    def initialize(self) -> None:
+        self.leds.set_state("timer_lights")
 
     def isFinished(self) -> bool:
-        if self.leds.amp_timer_on is False:
+        if self.leds.timer_lights_on is False:
             return True
         else:
             return False
@@ -22,3 +22,7 @@ class AmpLEDs(Command):
 
     def runsWhenDisabled(self) -> bool:
         return True
+
+    def end(self, interrupted: bool):
+        self.leds.reset_timer_lights()
+        self.leds.set_state("default")

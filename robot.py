@@ -32,11 +32,15 @@ class Robot(TimedCommandRobot):
         if self.m_autonomous_command is not None:
             self.m_autonomous_command.schedule()
 
+    def autonomousPeriodic(self) -> None:
+        """Empty for now. Handled by command scheduler."""
+
     def teleopInit(self) -> None:
         """Shuts off the auto command if one is being run. Could be altered to allow the command to proceed into
         teleop mode."""
         if self.m_autonomous_command:
             self.m_autonomous_command.cancel()
+        self.m_robotcontainer.leds.set_state("default")
 
     def teleopPeriodic(self) -> None:
         """Nothing relevant here yet, everything's covered by the master scheduler."""
@@ -44,6 +48,9 @@ class Robot(TimedCommandRobot):
     def testInit(self) -> None:
         """Reset the scheduler automatically when entering test mode."""
         CommandScheduler.getInstance().cancelAll()
+
+    def _simulationPeriodic(self) -> None:
+        """Empty for now as well."""
 
 
 if __name__ == "__main__":

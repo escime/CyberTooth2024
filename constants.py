@@ -7,6 +7,7 @@ import math
 from wpimath.geometry import Translation2d, Pose2d
 from wpimath.kinematics import SwerveDrive4Kinematics
 from wpimath.trajectory import TrapezoidProfileRadians
+from wpimath.units import feetToMeters
 
 
 class DriveConstants:
@@ -31,9 +32,9 @@ class DriveConstants:
     m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
-    snap_controller_PID = [0.08, 0, 0.007]  # 0.05
+    snap_controller_PID = [0.051, 0, 0.01]  # 0.05
     turret_controller_PID = [0.08, 0, 0.0001]
-    clt_controller_PID = [3, 0, 0]  # 1
+    clt_controller_PID = [11, 0, 0]  # 1
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
     drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
@@ -47,6 +48,10 @@ class DriveConstants:
 
     slew_rate_drive = 130  # 50  # 110
     slew_rate_turn = 0
+
+    # ob_drive_pid = [0, 0, 0, 1/16.6] need to convert to meters, bud
+    ob_drive_pid = [0.5, 0, 0, 1 / feetToMeters(16.6)]
+    ob_steer_pid = [1, 0, 0, 0]
 
 
 class AutoConstants:
@@ -151,7 +156,6 @@ class ShooterConstants:
     trim = -0.005
 
 
-class GlobalVariables:
-    # This really shouldn't go here, but I'm trying to fix something really bad. This is also very stupid.
-    current_vision = Pose2d(0, 0, 0)
-    timestamp = 0
+class LEDConstants:
+    port = 0
+    strip_length = 20

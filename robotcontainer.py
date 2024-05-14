@@ -4,7 +4,8 @@ from commands2 import button
 
 from constants import OIConstants, DriveConstants
 from subsystems.drivesubsystem import DriveSubsystem
-from subsystems.ledsubsystem import LEDs
+# from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 from subsystems.visionsubsystem import VisionSubsystem
 from subsystems.utilsubsystem import UtilSubsystem
 from subsystems.tuningsubsystem import TuningSubsystem
@@ -41,6 +42,12 @@ from commands.shoot_odo_only import ShootVisionOdo
 from helpers.custom_hid import CustomHID
 from pathplannerlib.auto import NamedCommands, PathPlannerAuto
 from commands.passthrough import Passthrough
+from commands.check_drivetrain import CheckDrive
+from commands.check_shooter import CheckShooter
+from commands.check_arm import CheckArm
+from commands.check_intake import CheckIntake
+from commands.master_caution import MasterCaution
+from helpers.pose_estimator import PoseEstimator
 
 
 class RobotContainer:
@@ -66,13 +73,15 @@ class RobotContainer:
 
         # Instantiate subsystems using their constructors if tuning mode is disabled.
         if not tuning_setter:
-            self.robot_drive = DriveSubsystem(self.timer)
-            self.leds = LEDs(0, 20, 1, 0.03, "GRB", self.timer)
-            self.vision_system = VisionSubsystem(self.timer, self.robot_drive)
+            self.pose_estimator = PoseEstimator()
+            self.robot_drive = DriveSubsystem(self.timer, self.pose_estimator)
+            # self.leds = LEDs(0, 20, 1, 0.03, "GRB", self.timer)
+            self.leds = LEDs(self.timer)
+            self.trapper = TrapperSubsystem()
+            self.vision_system = VisionSubsystem(self.timer, self.pose_estimator, self.trapper)
             self.utilsys = UtilSubsystem()  # Only compatible with REV PDH at this time.
             self.shooter = ShooterSubsystem()
             self.intake = IntakeSubsystem()
-            self.trapper = TrapperSubsystem()
 
         # Setup driver & operator controllers.
         self.driver_controller_raw = CustomHID(OIConstants.kDriverControllerPort, "xbox")
@@ -82,17 +91,16 @@ class RobotContainer:
         # Perform setup as normal, unless tuning mode is enabled.
         if not tuning_setter:
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
-                lambda: self.robot_drive.drive_2ok_clt_dmp(
-                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
-                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
-                    self.driver_controller_raw.get_axis("RX", 0.06) * -1,
-                    3,  # 7
-                    0.2
+                lambda: self.robot_drive.drive_2ok_clt(
+                    self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+                    self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+                    self.driver_controller_raw.get_axis_squared("RX", 0.06) * -1,
+                    2  # 7
                 ), self.robot_drive
             ))
 
             # Set default subsystem commands.
-            self.leds.setDefaultCommand(DefaultLEDs(self.leds))
+            # self.leds.setDefaultCommand(DefaultLEDs(self.leds))
 
             # Register commands for PathPlanner.
             self.registerCommands()
@@ -106,7 +114,7 @@ class RobotContainer:
                                "C_ScoreMobility", "A_Score2_Close", "B_Score2_Close", "C_Score2_Close",
                                "A_Score4", "B_Score4", "C_Score4", "A_Score2", "C_Score2", "C_Score3", "A_Score3",
                                "B_Score4_Fast", "B_Score4_Fastest", "B_Score3.5", "A_Score3_Midline",
-                               "C_Score3_Midline", "Chaos", "B_Score4.5", "ChoreoTesting"]
+                               "C_Score3_Midline", "Chaos", "B_Score4.5", "ChoreoTesting", "0SystemsCheck"]
             self.m_chooser.setDefaultOption("DoNothing", "DoNothing")
             for x in self.auto_names:
                 self.m_chooser.addOption(x, x)
@@ -164,18 +172,6 @@ class RobotContainer:
                 self.driver_controller_raw.refine_trigger("R", 0.05, 0.8, 0.3)), self.robot_drive))
 
         # Press any direction on the D-pad to enable PID snap to that equivalent angle based on field orientation
-        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("W")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-        #         270
-        #     ), self.robot_drive))
-        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
-        #     commands2.cmd.run(lambda: self.robot_drive.snap_drive(
-        #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
-        #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-        #         90
-        #     ), self.robot_drive))
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("N")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
@@ -188,9 +184,6 @@ class RobotContainer:
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
                 0
             ), self.robot_drive))
-        # button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("S")).onTrue(
-        #     self.robot_drive.follow_path_command([1.84, 7.80, 270], 270)
-        # )
         button.Trigger(lambda: self.driver_controller_raw.get_d_pad_pull("E")).toggleOnTrue(
             commands2.cmd.run(lambda: self.robot_drive.snap_drive(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
@@ -246,7 +239,7 @@ class RobotContainer:
             commands2.ParallelCommandGroup(
                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer),
-               ShootLEDs(self.leds, "slow"))))
+               ShootLEDs(self.leds))))
 
         # Press to prepare to place a NOTE in the AMP.
         button.Trigger(lambda: self.operator_controller_raw.get_button("A") or
@@ -266,7 +259,7 @@ class RobotContainer:
         button.Trigger(lambda: self.trapper.get_note_acquired() and
                        (DriverStation.isTeleopEnabled() or
                        DriverStation.isDisabled())).onTrue(commands2.SequentialCommandGroup(
-                        FlashLL(self.vision_system, self.leds),
+                        FlashLL(self.vision_system, self.leds, self.timer),
                         AlertGPLEDs(self.leds, self.trapper)))
 
         # Start an AMPLIFICATION timer.
@@ -331,7 +324,7 @@ class RobotContainer:
 
         # If climbing, set the leds to rainbow!
         button.Trigger(lambda: self.trapper.is_climbing).whileTrue(
-         commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds).ignoringDisable(True))
+         commands2.cmd.runOnce(lambda: self.leds.set_state("rainbow"), self.leds).ignoringDisable(True))
 
         # Set shooter to STOW when pressing MENU on the driver controller
         button.Trigger(lambda: self.driver_controller_raw.get_button("MENU")).onTrue(
@@ -386,31 +379,59 @@ class RobotContainer:
         # NamedCommands.registerCommand("drive_to_note", DriveToNote(self.robot_drive, self.intake,
         #                                                            self.vision_system, self.trapper, self.leds,
         #                                                            self.timer))
-        NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds))
+        NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds, self.timer))
         NamedCommands.registerCommand("shoot_vision", commands2.SequentialCommandGroup(
             ShootVision(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
                         self.trapper, self.leds, self.timer),
             commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),
                 commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
-                ShootLEDs(self.leds, "slow"))))
+                ShootLEDs(self.leds))))
         NamedCommands.registerCommand("shoot", commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),
-                ShootLEDs(self.leds, "slow")))
+                ShootLEDs(self.leds)))
         NamedCommands.registerCommand("turn_north", Turn(self.robot_drive, 0, self.timer))
         NamedCommands.registerCommand("toggle_odo", ToggleOdo(self.vision_system))
         NamedCommands.registerCommand("vision_estimate", VisionEstimate(self.vision_system, self.robot_drive))
-        NamedCommands.registerCommand("rainbow_leds", commands2.cmd.run(lambda: self.leds.rainbow_shift(), self.leds))
+        NamedCommands.registerCommand("rainbow_leds", commands2.cmd.runOnce(lambda: self.leds.set_state("rainbow"),
+                                                                            self.leds))
         NamedCommands.registerCommand("flash_green",
-                                      commands2.cmd.run(lambda: self.leds.flash_color([255, 0, 0], 2), self.leds))
+                                      commands2.SequentialCommandGroup(
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_color([255, 0, 0]),
+                                                                self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_rate(2), self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_state("flash_color"), self.leds)))
         NamedCommands.registerCommand("flash_red",
-                                      commands2.cmd.run(lambda: self.leds.flash_color([0, 255, 0], 2), self.leds))
+                                      commands2.SequentialCommandGroup(
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_color([0, 255, 0]),
+                                                                self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_rate(2), self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_state("flash_color"), self.leds)))
         NamedCommands.registerCommand("flash_blue",
-                                      commands2.cmd.run(lambda: self.leds.flash_color([0, 0, 255], 2), self.leds))
-        NamedCommands.registerCommand("flash_yellow",
-                                      commands2.cmd.run(lambda: self.leds.flash_color([225, 255, 0], 2), self.leds))
+                                      commands2.SequentialCommandGroup(
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_color([0, 0, 255]),
+                                                                self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_rate(2), self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_state("flash_color"), self.leds)))
         NamedCommands.registerCommand("flash_purple",
-                                      commands2.cmd.run(lambda: self.leds.flash_color([50, 149, 168], 2), self.leds))
+                                      commands2.SequentialCommandGroup(
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_color([50, 149, 168]),
+                                                                self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_rate(2), self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_state("flash_color"), self.leds)))
+        NamedCommands.registerCommand("flash_yellow",
+                                      commands2.SequentialCommandGroup(
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_color([255, 255, 0]),
+                                                                self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_flash_color_rate(2), self.leds),
+                                          commands2.cmd.runOnce(lambda: self.leds.set_state("flash_color"), self.leds)))
+        NamedCommands.registerCommand("default_leds", commands2.cmd.runOnce(lambda: self.leds.set_state("default"),
+                                                                            self.leds))
         NamedCommands.registerCommand("maintain_shooter", MaintainShooter(self.shooter, self.robot_drive,
                                                                           self.vision_system))
         NamedCommands.registerCommand("passthrough", Passthrough("readied", self.shooter, self.intake, self.trapper))
+        NamedCommands.registerCommand("check_drive", CheckDrive(self.robot_drive, self.utilsys, self.timer))
+        NamedCommands.registerCommand("check_shooter", CheckShooter(self.shooter, self.utilsys, self.timer))
+        NamedCommands.registerCommand("check_arm", CheckArm(self.trapper, self.utilsys, self.timer))
+        NamedCommands.registerCommand("check_intake", CheckIntake(self.intake, self.utilsys, self.timer))
+        NamedCommands.registerCommand("master_caution", MasterCaution(self.leds, self.timer))

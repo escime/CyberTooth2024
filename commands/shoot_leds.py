@@ -1,25 +1,19 @@
 from commands2 import Command
-from subsystems.ledsubsystem import LEDs
+from subsystems.ledsubsystem2 import LEDs
 
 
 class ShootLEDs(Command):
-    def __init__(self, leds: LEDs, speed: str):
+    def __init__(self, leds: LEDs):
         super().__init__()
         self.leds = leds
-        self.speed = speed
         self.addRequirements(leds)
 
     def initialize(self) -> None:
-        self.leds.shoot_animator(self.speed)
-
-    def execute(self) -> None:
-        self.leds.shoot_animator(self.speed)
-
-    def isFinished(self) -> bool:
-        if self.leds.shooting is False:
-            return True
-        else:
-            return False
+        self.leds.set_state("shoot")
 
     def runsWhenDisabled(self) -> bool:
         return False
+
+    def end(self, interrupted: bool):
+        self.leds.reset_shoot()
+        self.leds.set_state("default")

@@ -23,4 +23,5 @@ class Eject(Command):
     def end(self, interrupted: bool):
         self.intake.intake(0)
         self.trapper.manual_trap(0)
-        self.shooter.zero_out()
+        self.shooter.set_known_setpoint("readied")
+        self.shooter.feeder.set(0)
