@@ -94,10 +94,18 @@ class RobotContainer:
                 lambda: self.robot_drive.drive_2ok_clt(
                     self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                     self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                    self.driver_controller_raw.get_axis_squared("RX", 0.06) * -1,
-                    2  # 7
+                    self.driver_controller_raw.get_axis_squared("RX", 0.06),
+                    True
                 ), self.robot_drive
             ))
+
+            # self.robot_drive.setDefaultCommand(commands2.cmd.run(
+            #     lambda: self.robot_drive.snap_drive(
+            #         self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
+            #         self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
+            #         self.driver_controller_raw.dir_est_ctrl("R")
+            #     ), self.robot_drive
+            # ))
 
             # Set default subsystem commands.
             # self.leds.setDefaultCommand(DefaultLEDs(self.leds))
@@ -167,7 +175,7 @@ class RobotContainer:
             commands2.cmd.run(lambda: self.robot_drive.drive_slow(
                 self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                 self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                self.driver_controller_raw.get_axis("RX", 0.06) * DriveConstants.kMaxAngularSpeed,
+                self.driver_controller_raw.get_axis("RX", 0.06),
                 True,
                 self.driver_controller_raw.refine_trigger("R", 0.05, 0.8, 0.3)), self.robot_drive))
 
@@ -242,18 +250,28 @@ class RobotContainer:
                ShootLEDs(self.leds))))
 
         # Press to prepare to place a NOTE in the AMP.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("A") or
-                       self.driver_controller_raw.get_button("A")).toggleOnTrue(
-            ReadyAMP(self.trapper, self.shooter, self.robot_drive, self.intake))
+        button.Trigger(lambda: self.operator_controller_raw.get_button("A")).toggleOnTrue( # or
+                       # self.driver_controller_raw.get_button("A")).toggleOnTrue(
+                       ReadyAMP(self.trapper, self.shooter, self.robot_drive, self.intake))
+
+        # When A is pressed, generate a path to the AMP and, uh, see what happens
+#         button.Trigger(lambda: self.driver_controller_raw.get_button("A") and
+#                        DriverStation.getAlliance() == DriverStation.Alliance.kBlue).onTrue(
+#             self.robot_drive.pathfind([1.91, 7.32, -90])
+#         )
+#         button.Trigger(lambda: self.driver_controller_raw.get_button("A") and not
+#                        DriverStation.getAlliance() == DriverStation.Alliance.kBlue).onTrue(
+#             self.robot_drive.pathfind([16.54 - 1.91, 7.32, -90])
+#         )
 
         # Hold to score a NOTE in the AMP. Release to return to STOW.
-        button.Trigger(lambda: self.operator_controller_raw.get_button("X") or
-                       self.driver_controller_raw.get_button("X")).onTrue(
-            ScoreAMP(self.trapper, self.robot_drive))
+        button.Trigger(lambda: self.operator_controller_raw.get_button("X")).onTrue(  # or
+                       # self.driver_controller_raw.get_button("X")).onTrue(
+                       ScoreAMP(self.trapper, self.robot_drive))
 
         # Press to toggle between auto shooting and manual shooting from the podium
-        # button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
-        #     commands2.cmd.runOnce(lambda: self.vision_system.toggle_vision_shot_bypass(), self.vision_system))
+        button.Trigger(lambda: self.driver_controller_raw.get_button("B")).onTrue(
+            commands2.cmd.runOnce(lambda: self.vision_system.toggle_vision_shot_bypass(), self.vision_system))
 
         # When a NOTE enters the trapper, flash all LEDs green.
         button.Trigger(lambda: self.trapper.get_note_acquired() and
@@ -304,9 +322,9 @@ class RobotContainer:
             commands2.cmd.runOnce(lambda: self.shooter.increment_trim(-0.001), self.shooter))
 
         # Hold to intake a NOTE.
-        button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1) or
-                       self.driver_controller_raw.get_button("B")).whileTrue(
-            Intake(self.intake, self.trapper, True, self.timer))
+        button.Trigger(lambda: self.operator_controller_raw.get_trigger("R", 0.1)).whileTrue(  # or
+                       # self.driver_controller_raw.get_button("B")).whileTrue(
+                       Intake(self.intake, self.trapper, True, self.timer))
 
         # Hold to spit out a NOTE.
         button.Trigger(lambda: self.operator_controller_raw.get_trigger("L", 0.1)).whileTrue(
@@ -381,8 +399,8 @@ class RobotContainer:
         #                                                            self.timer))
         NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds, self.timer))
         NamedCommands.registerCommand("shoot_vision", commands2.SequentialCommandGroup(
-            ShootVision(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
-                        self.trapper, self.leds, self.timer),
+            ShootVisionOdo(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
+                           self.trapper, self.leds, self.timer),
             commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),
                 commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),

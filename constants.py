@@ -32,17 +32,17 @@ class DriveConstants:
     m_BR_location = Translation2d(-0.52705 / 2, -0.52705 / 2)
     m_kinematics = SwerveDrive4Kinematics(m_FL_location, m_FR_location, m_BL_location, m_BR_location)
 
-    snap_controller_PID = [0.051, 0, 0.01]  # 0.05
+    snap_controller_PID = [0.051, 0, 0]  # 0.01
     turret_controller_PID = [0.08, 0, 0.0001]
-    clt_controller_PID = [11, 0, 0]  # 1
+    clt_controller_PID = [0.03, 0, 0.01]  # 11
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
     drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
 
-    closed_loop_ramp = 0.0
+    closed_loop_ramp = 0.1  # was 0.0
     open_loop_ramp = 0.25
-    drive_current_limit = 60  # Was 38
-    azimuth_current_limit = 30  # Was 38
+    drive_current_limit = 50  # was 60
+    azimuth_current_limit = 20  # Was 30
 
     balance_PID = [0.01, 0, 0]
 
@@ -122,7 +122,6 @@ class IntakeConstants:
 
 class VisionConstants:
     rotation_from_horizontal = 30.5  # In degrees.
-    # rotation_from_horizontal = 45  # TODO Correct here and in the limelight GUI
     lens_height = 20.52718  # In inches.
     tag_heights = [52.625, 52.625, 56.375, 56.375, 52.625, 52.625, 56.375, 56.375,
                    52.625, 52.625, 52, 52, 52, 52, 52, 52]  # In inches.

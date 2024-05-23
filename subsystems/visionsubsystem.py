@@ -121,11 +121,13 @@ class VisionSubsystem(commands2.Subsystem):
         to automatically update the initial pose and the software assumes (0, 0)."""
         # self.robot_drive.reset_odometry(self.vision_estimate_pose())
         if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            drive.gyro.setYaw(0)
+            # drive.gyro.setYaw(0)
             drive.reset_odometry(Pose2d(Translation2d(1.31, 5.54), Rotation2d.fromDegrees(0)))
+            drive.clt_target = 0
         else:
-            drive.gyro.setYaw(0)
+            # drive.gyro.setYaw(0)
             drive.reset_odometry(Pose2d(Translation2d(15.24, 5.54), Rotation2d.fromDegrees(180)))
+            drive.clt_target = 180
 
     def push_mt2_rotation(self) -> None:
         self.limelight_table.putNumberArray("robot_orientation_set",
@@ -164,7 +166,9 @@ class VisionSubsystem(commands2.Subsystem):
                 self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
             self.push_mt2_rotation()
             if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.2s since last update,
-                if self.trapper.arm_setpoint == self.trapper.setpoints["stow"]:
+                # print(self.trapper.arm_setpoint)
+                # print(self.trapper.setpoints["stow"])
+                if self.trapper.arm_setpoint == "stow":
                     self.update_values()  # Update limelight values.
                     if self.has_targets():  # If an AprilTag is visible,
                         self.update_pose_with_vision()
@@ -339,7 +343,7 @@ class VisionSubsystem(commands2.Subsystem):
             else:
                 alpha = math.degrees(math.atan2(-y, -x)) + 180
         self.alpha = alpha - 3
-        drive.snap_drive(x_speed, y_speed, alpha - 3)
+        drive.snap_drive_targeting(x_speed, y_speed, alpha - 3)
 
     def align_to_coords(self, x_speed: float, y_speed: float, target: [], drive: DriveSubsystem):
         pose = drive.get_pose()

@@ -50,7 +50,6 @@ class ShootVisionOdo(Command):
                 self.ready_buffer[0] = False
             self.ready_buffer = self.ready_buffer[1:] + self.ready_buffer[:1]
             if all(self.ready_buffer):
-                print("TARGET LOCKED!")
                 self.target_locked = True
             self.leds.set_misalignment(self.vision.alpha, self.drive.get_heading_odo().degrees())
         else:
