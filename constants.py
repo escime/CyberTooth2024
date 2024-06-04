@@ -157,4 +157,4 @@ class ShooterConstants:
 
 class LEDConstants:
     port = 0
-    strip_length = 20
+    strip_length = 60
