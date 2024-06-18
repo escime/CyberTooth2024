@@ -132,6 +132,7 @@ class DriveSubsystem(commands2.Subsystem):
         self.clt_target = self.pose_estimator.get_heading().degrees()
         self.clt_first_time = True
         self.clt_reset = False
+        self.last_clt_call = self.timer.get()
 
         # Create Field2d object to display/track robot position.
         self.m_field = Field2d()
@@ -207,12 +208,18 @@ class DriveSubsystem(commands2.Subsystem):
         if rot != 0:
             self.drive_2ok(x_speed, y_speed, rot * DriveConstants.kMaxAngularSpeed, field_relative)
             self.clt_reset = True
+        elif x_speed <= 0.25 * DriveConstants.kMaxSpeed and y_speed <= 0.25 * DriveConstants.kMaxSpeed:
+            self.drive_2ok(x_speed, y_speed, rot * DriveConstants.kMaxAngularSpeed, field_relative)
+            self.clt_reset = True
         else:
             if self.clt_reset:
-                self.clt_target = current_heading
+                current_angular_velocity = self.get_angular_velocity() * 180 / math.pi
+                self.clt_target = current_heading + (current_angular_velocity * (self.timer.get() - self.last_clt_call))
                 self.clt_reset = False
             rotate_output = self.clt_controller.calculate(self.clt_target, current_heading)
             self.drive_2ok(x_speed, y_speed, rotate_output, field_relative)
+
+        self.last_clt_call = self.timer.get()
 
     def drive(self, x_speed: float, y_speed: float, rot: float, field_relative: bool) -> None:
         """The default drive command for the robot.
@@ -358,9 +365,9 @@ class DriveSubsystem(commands2.Subsystem):
             heading_target = heading_target + 180
         rotate_output = self.snap_controller.calculate(heading_target, current_heading)
         if -0.15 <= rotate_output <= 0:
-            rotate_output = -0.15
+            rotate_output = -0.09
         elif 0 < rotate_output <= 0.15:
-            rotate_output = 0.15
+            rotate_output = 0.09
         self.clt_target = self.get_heading_odo().degrees()
         self.drive_2ok(x_speed, y_speed, rotate_output, True)
 
@@ -460,6 +467,9 @@ class DriveSubsystem(commands2.Subsystem):
             self.get_chassis_speeds().vy * self.get_heading_odo().sin(), \
             self.get_chassis_speeds().vy * self.get_heading_odo().cos() + \
             self.get_chassis_speeds().vx * self.get_heading_odo().sin(), self.get_chassis_speeds().omega
+
+    def get_angular_velocity(self) -> float:
+        return self.get_chassis_speeds().omega
 
     def get_field_relative_acceleration(self, new_speed, old_speed, time: float) -> [float, float, float]:
         """Returns the instantaneous acceleration of the robot."""

@@ -34,7 +34,7 @@ class DriveConstants:
 
     snap_controller_PID = [0.051, 0, 0]  # 0.01
     turret_controller_PID = [0.08, 0, 0.0001]
-    clt_controller_PID = [0.03, 0, 0.01]  # 11
+    clt_controller_PID = [0.04, 0, 0]  # 11
     drive_controller_PID = [2, 0, 0]
     azimuth_controller_PID = [1.8, 0, 0]
     drive_controller_FF = [0.18 / 12, 2.35, 0.44]  # n/a, 2.35, 0.44
