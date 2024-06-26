@@ -208,7 +208,8 @@ class DriveSubsystem(commands2.Subsystem):
         if rot != 0:
             self.drive_2ok(x_speed, y_speed, rot * DriveConstants.kMaxAngularSpeed, field_relative)
             self.clt_reset = True
-        elif x_speed <= 0.25 * DriveConstants.kMaxSpeed and y_speed <= 0.25 * DriveConstants.kMaxSpeed:
+        elif -0.5 * DriveConstants.kMaxSpeed <= x_speed <= 0.5 * DriveConstants.kMaxSpeed and \
+                -0.5 * DriveConstants.kMaxSpeed <= y_speed <= 0.5 * DriveConstants.kMaxSpeed:
             self.drive_2ok(x_speed, y_speed, rot * DriveConstants.kMaxAngularSpeed, field_relative)
             self.clt_reset = True
         else:

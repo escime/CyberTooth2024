@@ -1,0 +1,43 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 0.48255023756837656,
+      "y": 7.729152120215796
+    },
+    "rotation": 0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "return_wheels"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "flash_purple"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "StraightMobility"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "default_leds"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

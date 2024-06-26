@@ -1,0 +1,55 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 0.79,
+      "y": 6.57
+    },
+    "rotation": 60.0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "return_wheels"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ready_shooter"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "flash_purple"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "A-out"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "default_leds"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

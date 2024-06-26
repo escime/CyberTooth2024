@@ -1,0 +1,95 @@
+{
+  "version": 1.0,
+  "startingPose": null,
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "flash_purple"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "check_drive"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "flash_blue"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "check_shooter"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "flash_green"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "check_arm"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "flash_yellow"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "check_intake"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "master_caution"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": false
+}

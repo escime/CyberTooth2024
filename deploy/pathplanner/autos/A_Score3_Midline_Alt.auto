@@ -1,0 +1,55 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 0.7574317455291717,
+      "y": 6.644530773162838
+    },
+    "rotation": 59.036245093869255
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "ready_shooter"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "A_Score3_Midline_Alt.1"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot_vision"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "A_Score3_Midline_Alt.2"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "shoot_vision"
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": true
+}
