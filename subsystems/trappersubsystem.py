@@ -54,7 +54,6 @@ class TrapperSubsystem(commands2.Subsystem):
         # self.mech_root = self.mech.getRoot("core", 3, 3)
         # self.mech_arm = self.mech_root.appendLigament("Arm", 3, -180)
 
-        # TODO test if this actually decreases CAN utilization
         self.trap.setControlFramePeriodMs(60)
         self.arm.setControlFramePeriodMs(60)
         self.climb.setControlFramePeriodMs(60)

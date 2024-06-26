@@ -58,18 +58,6 @@
           "data": {
             "name": "shoot_vision"
           }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "A_Score5_Alt.4"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "shoot_vision"
-          }
         }
       ]
     }

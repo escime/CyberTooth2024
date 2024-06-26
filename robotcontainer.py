@@ -159,6 +159,11 @@ class RobotContainer:
 
     def configureTriggersDefault(self) -> None:
         """Used to set up any commands that trigger when a measured event occurs."""
+        button.Trigger(lambda: DriverStation.isTeleopEnabled()).onTrue(
+            commands2.cmd.runOnce(lambda: self.robot_drive.set_alliance(), self.robot_drive))
+        button.Trigger(lambda: DriverStation.isDSAttached()).onTrue(
+            commands2.cmd.runOnce(lambda: self.robot_drive.set_alliance(), self.robot_drive))
+
         # Hold for Parking Brake.
         # button.Trigger(lambda: self.driver_controller_raw.get_trigger("L", 0.05)).whileTrue(
         #     commands2.cmd.run(lambda: self.robot_drive.drive_lock(), self.robot_drive))

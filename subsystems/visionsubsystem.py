@@ -159,36 +159,34 @@ class VisionSubsystem(commands2.Subsystem):
     def periodic(self) -> None:
         """Update vision variables and robot odometry as fast as scheduler allows."""
         start_time = self.timer.get()
-        if self.vision_odo:  # Enable vision-based odometry.
-            if self.limelight_table.getNumber("camMode", -1) != 0:  # If camera not in vision mode,
-                self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
-            if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
-                self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
-            self.push_mt2_rotation()
-            if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.2s since last update,
-                # print(self.trapper.arm_setpoint)
-                # print(self.trapper.setpoints["stow"])
-                if self.trapper.arm_setpoint == "stow":
-                    self.update_values()  # Update limelight values.
-                    if self.has_targets():  # If an AprilTag is visible,
-                        self.update_pose_with_vision()
-                self.record_time = self.timer.get()  # Reset timer.
+        # if self.vision_odo:  # Enable vision-based odometry.
+            # if self.limelight_table.getNumber("camMode", -1) != 0:  # If camera not in vision mode,
+            #     self.limelight_table.putNumber("camMode", 0)  # Put camera in vision mode.
+            # if self.limelight_table.getNumber("pipeline", 0) != 0:  # If camera not in pipeline 0,
+            #     self.limelight_table.putNumber("pipeline", 0)  # Put camera in pipeline 0.
+        self.push_mt2_rotation()  # Tell the robot what the robot's orientation is.
+        if self.timer.get() - 0.2 > self.record_time:  # If it's been 0.2s since last update,
+            if self.trapper.arm_setpoint == "stow":
+                self.update_values()  # Update limelight values.
+                if self.has_targets():  # If an AprilTag is visible,
+                    self.update_pose_with_vision()
+            self.record_time = self.timer.get()  # Reset timer.
 
-        if not self.vision_odo:  # If robot is in targeting mode,
-            if self.timer.get() - 0.1 > self.record_time:
-                if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
-                    if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
-                        self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
-                else:  # Otherwise,
-                    if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
-                        self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-                self.update_values_safe()  # Update all values.
-                self.record_time = self.timer.get()
+        # if not self.vision_odo:  # If robot is in targeting mode,
+        #     if self.timer.get() - 0.1 > self.record_time:
+        #         if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
+        #             if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
+        #                 self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
+        #         else:  # Otherwise,
+        #             if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
+        #                 self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
+        #         self.update_values_safe()  # Update all values.
+        #         self.record_time = self.timer.get()
 
-        SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
-        SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
-        SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
-        SmartDashboard.putNumber("Alpha", self.alpha)
+        # SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
+        # SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
+        # SmartDashboard.putNumber("Target Shooter Angle", self.range_to_angle())
+        # SmartDashboard.putNumber("Alpha", self.alpha)
         SmartDashboard.putBoolean("Vision Targeting Overridden?", self.vision_shot_bypass)
         SmartDashboard.putNumber("Vision Periodic Runtime", self.timer.get() - start_time)
         # SmartDashboard.putNumber("Range from Note", self.calculate_range_area())

@@ -174,7 +174,6 @@ class DriveSubsystem(commands2.Subsystem):
             y_speed = -1 * y_speed
 
         # If in robot relative, drive robot relative.
-        # TODO Check if the blue alliance inversion should happen after this smh
         if not field_relative:
             swerve_module_states = DriveConstants.m_kinematics.toSwerveModuleStates(
                 ChassisSpeeds.discretize(x_speed, y_speed, -rot, self.current_time - self.last_time)
@@ -365,10 +364,10 @@ class DriveSubsystem(commands2.Subsystem):
         if self.blue_alliance:
             heading_target = heading_target + 180
         rotate_output = self.snap_controller.calculate(heading_target, current_heading)
-        if -0.15 <= rotate_output <= 0:
-            rotate_output = -0.09
-        elif 0 < rotate_output <= 0.15:
-            rotate_output = 0.09
+        if -0.2 <= rotate_output <= 0:
+            rotate_output = -0.11
+        elif 0 < rotate_output <= 0.2:
+            rotate_output = 0.11
         self.clt_target = self.get_heading_odo().degrees()
         self.drive_2ok(x_speed, y_speed, rotate_output, True)
 
@@ -510,6 +509,12 @@ class DriveSubsystem(commands2.Subsystem):
             self.m_BR.get_current_draw()
         ]
 
+    def set_alliance(self):
+        if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            self.blue_alliance = True
+        else:
+            self.blue_alliance = False
+
     def periodic(self) -> None:
         """Update robot odometry, pose, and dashboard readouts."""
         # Record the time that periodic begins.
@@ -535,16 +540,16 @@ class DriveSubsystem(commands2.Subsystem):
         self.loop_time = self.timer.get()
 
         # Perform any low time priority tasks.
-        if self.timer.get() - 0.5 > self.period_update_time:
-            # Check if the robot's alliance is the same as it was on startup.
-            if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-                self.blue_alliance = True
-            else:
-                self.blue_alliance = False
+        # if self.timer.get() - 0.5 > self.period_update_time:
+         # Check if the robot's alliance is the same as it was on startup.
+            # if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+            #     self.blue_alliance = True
+            # else:
+            #     self.blue_alliance = False
 
-            self.period_update_time = self.timer.get()
+            # self.period_update_time = self.timer.get()
 
-            SmartDashboard.putData("Field", self.m_field)
+        SmartDashboard.putData("Field", self.m_field)
         SmartDashboard.putNumber("Current Odo Heading", self.get_heading_odo().degrees())
         # SmartDashboard.putNumber("CLT Target Heading", self.clt_target)
         # SmartDashboard.putString("Estimated Pose", str(self.get_pose()))
