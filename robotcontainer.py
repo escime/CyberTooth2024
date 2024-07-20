@@ -91,10 +91,10 @@ class RobotContainer:
         # Perform setup as normal, unless tuning mode is enabled.
         if not tuning_setter:
             self.robot_drive.setDefaultCommand(commands2.cmd.run(
-                lambda: self.robot_drive.drive_2ok_clt(
+                lambda: self.robot_drive.drive_2ok(
                     self.driver_controller_raw.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed,
                     self.driver_controller_raw.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed,
-                    self.driver_controller_raw.get_axis_squared("RX", 0.06),
+                    self.driver_controller_raw.get_axis_squared("RX", 0.06) * DriveConstants.kMaxAngularSpeed,
                     True
                 ), self.robot_drive
             ))
@@ -248,8 +248,8 @@ class RobotContainer:
 
         # Hold to autonomously shoot a NOTE.
         button.Trigger(lambda: self.driver_controller_raw.get_button("RB")).whileTrue(commands2.SequentialCommandGroup(
-            ShootVisionOdo(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
-                           self.leds, self.timer),
+            ShootVision(True, self.shooter, self.vision_system, self.robot_drive, self.intake, self.trapper,
+                        self.leds, self.timer),
             commands2.ParallelCommandGroup(
                commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),
                Shoot("readied", True, self.shooter, self.intake, self.trapper, self.timer),
@@ -405,8 +405,8 @@ class RobotContainer:
         #                                                            self.timer))
         NamedCommands.registerCommand("flash_LL", FlashLL(self.vision_system, self.leds, self.timer))
         NamedCommands.registerCommand("shoot_vision", commands2.SequentialCommandGroup(
-            ShootVisionOdo(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
-                           self.trapper, self.leds, self.timer),
+            ShootVision(False, self.shooter, self.vision_system, self.robot_drive, self.intake,
+                        self.trapper, self.leds, self.timer),
             commands2.ParallelDeadlineGroup(
                 Shoot("readied", False, self.shooter, self.intake, self.trapper, self.timer),
                 commands2.cmd.run(lambda: self.robot_drive.drive(0, 0, 0, False), self.robot_drive),

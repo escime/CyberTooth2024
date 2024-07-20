@@ -540,14 +540,14 @@ class DriveSubsystem(commands2.Subsystem):
         self.loop_time = self.timer.get()
 
         # Perform any low time priority tasks.
-        # if self.timer.get() - 0.5 > self.period_update_time:
-         # Check if the robot's alliance is the same as it was on startup.
-            # if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
-            #     self.blue_alliance = True
-            # else:
-            #     self.blue_alliance = False
+        if self.timer.get() - 0.5 > self.period_update_time:
+            # Check if the robot's alliance is the same as it was on startup.
+            if DriverStation.getAlliance() == DriverStation.Alliance.kBlue:
+                self.blue_alliance = True
+            else:
+                self.blue_alliance = False
 
-            # self.period_update_time = self.timer.get()
+            self.period_update_time = self.timer.get()
 
         SmartDashboard.putData("Field", self.m_field)
         SmartDashboard.putNumber("Current Odo Heading", self.get_heading_odo().degrees())

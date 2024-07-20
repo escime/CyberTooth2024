@@ -172,16 +172,16 @@ class VisionSubsystem(commands2.Subsystem):
                     self.update_pose_with_vision()
             self.record_time = self.timer.get()  # Reset timer.
 
-        # if not self.vision_odo:  # If robot is in targeting mode,
-        #     if self.timer.get() - 0.1 > self.record_time:
-        #         if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
-        #             if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
-        #                 self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
-        #         else:  # Otherwise,
-        #             if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
-        #                 self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
-        #         self.update_values_safe()  # Update all values.
-        #         self.record_time = self.timer.get()
+        if not self.vision_odo:  # If robot is in targeting mode,
+            if self.timer.get() - 0.1 > self.record_time:
+                if DriverStation.getAlliance() == DriverStation.Alliance.kRed:  # If on red alliance,
+                    if self.limelight_table.getNumber("pipeline", 0) != 2:  # If camera not in pipeline 2,
+                        self.limelight_table.putNumber("pipeline", 2)  # Put camera in pipeline 2.
+                else:  # Otherwise,
+                    if self.limelight_table.getNumber("pipeline", 0) != 1:  # If camera not in pipeline 1,
+                        self.limelight_table.putNumber("pipeline", 1)  # Put camera in pipeline 1.
+                self.update_values_safe()  # Update all values.
+                self.record_time = self.timer.get()
 
         # SmartDashboard.putBoolean("Targets Detected?", self.has_targets())
         # SmartDashboard.putNumber("Range from Apriltag", self.calculate_range_with_tag())
@@ -403,7 +403,7 @@ class VisionSubsystem(commands2.Subsystem):
 
     def range_to_feed(self, drive: DriveSubsystem) -> float:
         lookup_dist = [11, 5, 4.999, 1]
-        lookup_angle = [0.73, 0.705, 0.76, 0.76]
+        lookup_angle = [0.73, 0.705, 0.705, 0.73]
 
         if lookup_dist[-1] <= self.range_to_speaker_odo(drive) <= lookup_dist[0]:
             solution = -1

@@ -30,26 +30,27 @@ class ShootVisionFeed(Command):
         self.target_locked = False
 
     def execute(self) -> None:
-        # self.shooter.set_known_setpoint("feed")
-        # if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
-        #     self.drive.snap_drive(0, 0, 210)
-        # else:
-        #     self.drive.snap_drive(0, 0, 140)
-        # if self.shooter.get_ready_to_shoot():
-        #     self.ready_buffer[0] = True
-        # else:
-        #     self.ready_buffer[0] = False
-        if self.vision.range_to_feed(self.drive) != -1:
-            if self.vision.range_to_speaker_odo(self.drive) > 5.5:
-                self.shooter.set_unknown_setpoint(self.vision.range_to_feed(self.drive),
-                                                  3750)
-            else:
-                self.shooter.set_unknown_setpoint(self.vision.range_to_feed(self.drive),
-                                                  3250)
-        self.vision.align_to_speaker_odo(self.controller.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
-                                         self.controller.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
-                                         self.drive)
-        if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(5, self.drive):
+        self.shooter.set_known_setpoint("feed")
+        if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
+            self.drive.snap_drive(0, 0, 210)
+        else:
+            self.drive.snap_drive(0, 0, 140)
+        if self.shooter.get_ready_to_shoot():
+            self.ready_buffer[0] = True
+        else:
+            self.ready_buffer[0] = False
+        # if self.vision.range_to_feed(self.drive) != -1:
+        #     if self.vision.range_to_speaker_odo(self.drive) > 5.5:
+        #         self.shooter.set_unknown_setpoint(self.vision.range_to_feed(self.drive),
+        #                                           3750)
+        #     else:
+        #         self.shooter.set_unknown_setpoint(self.vision.range_to_feed(self.drive),
+        #                                           3750)
+        # self.vision.align_to_speaker_odo(self.controller.get_axis_squared("LY", 0.06) * DriveConstants.kMaxSpeed * 0.9,
+        #                                  self.controller.get_axis_squared("LX", 0.06) * DriveConstants.kMaxSpeed * 0.9,
+        #                                  self.drive)
+        # if self.shooter.get_ready_to_shoot() and self.vision.get_aligned_odo(5, self.drive):
+        if self.shooter.get_ready_to_shoot():
             self.ready_buffer[0] = True
         else:
             self.ready_buffer[0] = False
